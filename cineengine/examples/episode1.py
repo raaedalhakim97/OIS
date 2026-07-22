@@ -110,11 +110,12 @@ def render(t):
     lift = lift_amount(t)
     spr, fy, odx, ody = character(150, pose, t, face, lift=lift)
 
-    # orb sits at the hand (which raises/lowers continuously) — no more floating
+    # light rises HIGH toward the stars during the lift, then comes back down
+    # (lift returns to 0 before the walk-out, so it no longer floats away)
     ox = cx + odx
-    oy = HOR * H + ody
+    oy = HOR * H + ody - lift * 0.15 * H
     orb_pulse = 0.85 + 0.15 * math.sin(t * 3)
-    glow(a, ox, oy, 34 + 16 * lift, [255, 198, 120], (0.7 + 0.4 * lift) * orb_pulse)
+    glow(a, ox, oy, 34 + 20 * lift, [255, 198, 120], (0.7 + 0.4 * lift) * orb_pulse)
     # orb reflection on the water
     gy = np.arange(H - WL)
     streak = np.exp(-((np.arange(W)[None, :] - ox) ** 2) / (2 * 26 ** 2)) * (1 - gy[:, None] / (H - WL)) ** 1.4
