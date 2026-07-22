@@ -1,0 +1,17 @@
+numpy
+opencv-python
+torch
+torchvision
+moviepy
+Pillow
+diffusers
+transformers
+imageio
+imageio-ffmpeg
+scipy
+librosa
+soundfile
+moderngl
+moderngl-window
+tqdm
+rich
