@@ -55,9 +55,13 @@ def character(h, pose="stand", t=0.0, face=1, lift=0.0):
     rais_x, rais_y = cx + face * 0.22 * hh, neck_y - 0.42 * hh
     if pose == "sit":
         hand_x, hand_y = cx + face * 0.26 * hh, neck_y + 0.10 * hh
-    else:
+    elif lift >= 0:               # raise toward the sky
         hand_x = carr_x + (rais_x - carr_x) * lift
         hand_y = carr_y + (rais_y - carr_y) * lift
+    else:                         # lower toward the ground/water (lift in [-1,0])
+        lowr_x, lowr_y = cx + face * 0.36 * hh, neck_y + 0.54 * hh
+        hand_x = carr_x + (lowr_x - carr_x) * (-lift)
+        hand_y = carr_y + (lowr_y - carr_y) * (-lift)
     d.line([(cx + face * neckW, neck_y + 0.06 * hh), (hand_x, hand_y)], fill=col, width=int(0.09 * hh))
     d.ellipse([hand_x - 0.05 * hh, hand_y - 0.05 * hh, hand_x + 0.05 * hh, hand_y + 0.05 * hh], fill=col)
 
