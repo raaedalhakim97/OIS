@@ -161,10 +161,11 @@ def build_audio():
     n = int(DUR * SR)
     Lc = np.zeros(n, np.float32); Rc = np.zeros(n, np.float32)
     def st(sig, at, pan): add(Lc, sig * (1 - pan), at); add(Rc, sig * pan, at)
-    def note(m, at, pan, amp=0.24, dur=3.2, echo=True):
+    def note(m, at, pan, amp=0.24, dur=3.0, echo=True):
         st(piano(midi(m), dur, amp=amp), at, pan)
         if echo:                                   # whispered answer on the other side
-            st(piano(midi(m), dur * 0.8, amp=amp * 0.4), at + 0.55, 1 - pan)
+            st(piano(midi(m), dur * 0.8, amp=amp * 0.42), at + 0.5, 1 - pan)
+            st(piano(midi(m + 12 if m < 74 else m), dur * 0.6, amp=amp * 0.22), at + 1.0, pan)
 
     # soft pad + bass bed across the whole minute
     prog = [([53, 57, 60], 41), ([48, 52, 55], 48), ([50, 53, 57], 50), ([46, 50, 53], 46)]
@@ -176,28 +177,40 @@ def build_audio():
         add(Lc, bass(midi(br), step + 0.2, amp=0.11), k * step)
         add(Rc, bass(midi(br), step + 0.2, amp=0.11), k * step)
 
-    # phase A — the old keeper's slow theme (right), sparse
-    note(72, 3.0, 0.72, 0.22); note(69, 6.5, 0.72, 0.20); note(65, 10.0, 0.72, 0.17)
-    # set-down (a soft grounded note) + footsteps walking away
-    note(60, 15.2, 0.5, 0.20, echo=False)
+    # ---- a CONTINUOUS call-and-response conversation across the minute ----
+    # F-major pentatonic (always consonant, even when busy). Density ramps up
+    # toward the awakening, then eases as it resolves.
+    PENTA = [60, 62, 65, 67, 69, 72, 74, 77]      # C D F G A C D F
+    rng = np.random.default_rng(7)
+    tt = 5.0
+    while tt < 55.5:
+        dens = 0.35 + 0.65 * smooth(26.0, 49.0, tt) * (1 - 0.5 * smooth(52.0, 56.0, tt))
+        base = rng.integers(2, 5)                 # index into PENTA
+        # CALL (left): a little rising figure
+        call = [PENTA[base], PENTA[min(base + 1, 7)], PENTA[min(base + 2, 7)]]
+        for j, m in enumerate(call[:2 + (dens > 0.6)]):
+            note(m, tt + j * 0.42, 0.28, amp=0.15 * dens, dur=2.6)
+        # RESPONSE (right): the call answered, gently inverted / a step above
+        resp = [PENTA[min(base + 2, 7)], PENTA[min(base + 1, 7)], PENTA[base]]
+        for j, m in enumerate(resp[:2 + (dens > 0.6)]):
+            note(m, tt + 1.1 + j * 0.42, 0.72, amp=0.14 * dens, dur=2.6, echo=False)
+        tt += rng.uniform(2.4, 3.4) * (1.25 - 0.45 * dens)   # closer when busier
+
+    # ---- phase accents on top of the conversation ----
+    note(60, 15.2, 0.5, 0.18, echo=False)                    # the set-down
     for i in range(6):
         st(footstep(amp=0.12 * (1 - i / 8)), 16.5 + i * 0.7, 0.62 + i * 0.03)
-    note(65, 22.5, 0.7, 0.14)                        # a last faint call as he vanishes
-    # phase C — the child alone, hesitant, questioning (left), lots of space
-    note(69, 27.0, 0.3, 0.16); note(67, 31.5, 0.3, 0.15); note(72, 36.0, 0.3, 0.17)
-    note(65, 40.5, 0.3, 0.18)                        # the reach
-    # phase D — the AWAKENING: hand-over call & response, then a bloom
-    for m, at, p, amp in [(72, 45.0, 0.72, 0.20), (69, 47.0, 0.72, 0.16), (65, 49.0, 0.72, 0.12)]:
-        note(m, at, p, amp)                          # old voice, fading (right)
-    for m, at, p, amp in [(65, 45.8, 0.30, 0.18), (69, 47.8, 0.30, 0.22), (72, 49.8, 0.30, 0.26)]:
-        note(m, at, p, amp)                          # child voice, rising (left)
-    for i, m in enumerate([77, 81, 84, 86]):         # stars answer, soft cascade
-        st(piano(midi(m), 2.2, amp=0.09), 50.4 + i * 0.4, 0.5 + (i - 2) * 0.08)
-    # phase E — resolve home to F, a final gentle exchange
+    # AWAKENING hand-over (the fullest exchange)
+    for m, at, p, amp in [(72, 45.0, 0.72, 0.22), (69, 47.0, 0.72, 0.17), (65, 49.0, 0.72, 0.13)]:
+        note(m, at, p, amp)                                  # old voice fading (right)
+    for m, at, p, amp in [(65, 45.8, 0.28, 0.20), (69, 47.8, 0.28, 0.24), (72, 49.8, 0.28, 0.28)]:
+        note(m, at, p, amp)                                  # child rising (left)
+    for i, m in enumerate([77, 81, 84, 86, 89]):             # stars answer, cascade
+        st(piano(midi(m), 2.0, amp=0.09), 50.2 + i * 0.35, 0.5 + (i - 2) * 0.09)
+    # resolve home to F
     for m in [65, 69, 72]:
         st(piano(midi(m), 3.4, amp=0.14), 54.2, 0.5)
-    note(77, 54.8, 0.32, 0.20); note(72, 56.4, 0.68, 0.18)
-    st(piano(midi(65), 4.0, amp=0.22), 57.8, 0.5)    # settle on F (home)
+    st(piano(midi(65), 4.2, amp=0.22), 57.8, 0.5)
 
     Lc = reverb(Lc); Rc = reverb(Rc)
     mix = np.tanh(np.stack([Lc, Rc], 1) * 1.2)
