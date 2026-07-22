@@ -165,10 +165,14 @@ def rising_shimmer(dur, amp=0.24):
     return (y * env * amp).astype(np.float32)
 
 
-def twinkle(freq, amp=0.16, dur=0.6):
+def bell(m, dur=1.2, amp=0.12):
+    """Soft, in-key bell (for the stars' answer) — warm, not piercing."""
     n = int(dur * SR); t = np.arange(n) / SR
-    return ((np.sin(2 * np.pi * freq * t) + 0.5 * np.sin(2 * np.pi * freq * 2.01 * t))
-            * np.exp(-t * 7) * amp).astype(np.float32)
+    f = midi(m)
+    y = (np.sin(2 * np.pi * f * t) + 0.45 * np.sin(2 * np.pi * 2 * f * t)
+         + 0.18 * np.sin(2 * np.pi * 3 * f * t))
+    env = np.exp(-t * 2.1) * np.clip(t / 0.015, 0, 1)
+    return (y * env * amp).astype(np.float32)
 
 
 def footstep(amp=0.2, dur=0.16):
@@ -187,13 +191,17 @@ def build_audio():
         tt = s + 0.3
         while tt < e - 0.2:
             st(footstep(), tt); tt += STEP
-    # rising shimmer on the lift
+    # rising shimmer on the lift (the sound of raising the light)
     st(rising_shimmer(T_LIFT[1] - T_LIFT[0]), T_LIFT[0])
-    # twinkles as the stars answer (9.6 -> 15)
-    rng = np.random.default_rng(5)
-    tt = 9.8
-    while tt < 15.5:
-        st(twinkle(rng.uniform(1600, 3200)), tt, rng.uniform(0.3, 0.7)); tt += rng.uniform(0.35, 0.7)
+    # the stars ANSWER: an organized F-major-pentatonic bell phrase that
+    # ascends with the rise, then gently resolves (harmonizes with the piano).
+    ascend = [77, 79, 81, 84, 86]          # F5 G5 A5 C6 D6 (F pentatonic)
+    for i, m in enumerate(ascend):
+        st(bell(m, amp=0.12 - i * 0.012), 10.0 + i * 0.42, pan=0.5 + (i - 2) * 0.06)
+    st(bell(89, amp=0.06), 12.1)           # soft F6 shimmer at the top
+    # settle back down over the hold (descending, quiet)
+    for at, m in ((13.8, 84), (15.2, 81), (16.6, 77)):
+        st(bell(m, amp=0.08), at, pan=0.5)
     L = reverb(L); R = reverb(R)
     mix = np.tanh(np.stack([L, R], 1) * 1.3)
     mix /= (np.max(np.abs(mix)) + 1e-6); mix *= 0.9
