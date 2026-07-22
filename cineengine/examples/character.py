@@ -9,7 +9,7 @@ poses: stand | walk | lift | sit
 import math
 from PIL import Image, ImageDraw
 
-INK = (18, 20, 30)
+INK = (5, 6, 11)      # near-black so the silhouette reads against dark scenes
 
 
 def character(h, pose="stand", t=0.0, face=1, lift=0.0):
