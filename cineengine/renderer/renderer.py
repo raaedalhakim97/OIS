@@ -140,14 +140,14 @@ class Renderer:
              1.0, -1.0, 1.0, 0.0,
             -1.0,  1.0, 0.0, 1.0,
              1.0,  1.0, 1.0, 1.0,
-        ], dtype=\'f4\')
+        ], dtype='f4')
         vbo = self.ctx.buffer(vertices.tobytes())
         vao = self.ctx.vertex_array(
             render_program,
             [(
                 vbo,
-                \"2f 2f\",
-                \"in_vert\", \"in_texcoord\"
+                "2f 2f",
+                "in_vert", "in_texcoord"
             )]
         )
         vao.render(moderngl.TRIANGLE_STRIP)
@@ -198,7 +198,7 @@ class Renderer:
             color_attachments=[final_frame_texture]
         )
         read_fbo.use()
-        frame_data = np.frombuffer(self.ctx.read_framebuffer(read_fbo, components=4, dtype=\'f1\'), dtype=np.float32).reshape(
+        frame_data = np.frombuffer(self.ctx.read_framebuffer(read_fbo, components=4, dtype='f1'), dtype=np.float32).reshape(
             self.config.RESOLUTION[1], self.config.RESOLUTION[0], 4
         )
         # Convert float32 (0-1) to uint8 (0-255)

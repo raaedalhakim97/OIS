@@ -81,7 +81,7 @@ if __name__ == "__main__":
     print("    config = Config()")
     print("    exporter = VideoExporter(config.FPS, config.RESOLUTION)")
     print("    # Define a dummy frame generator (e.g., solid color frames)")
-    print("    def dummy_frame_generator(t):
+    print("    def dummy_frame_generator(t):")
     print("        color = (int(255 * (t / 5.0)), 0, int(255 * (1 - t / 5.0)))")
     print("        return np.full((config.RESOLUTION[1], config.RESOLUTION[0], 3), color, dtype=np.uint8)")
     print("    # exporter.export_video(dummy_frame_generator, duration=5.0, output_path=\"dummy_output.mp4\")")

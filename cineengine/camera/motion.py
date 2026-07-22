@@ -1,6 +1,6 @@
 
 import numpy as np
-from typing import Tuple, Callable
+from typing import Tuple, Callable, List
 
 from cineengine.camera.easing import Easing
 from cineengine.camera.shake import CameraShake

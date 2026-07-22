@@ -49,7 +49,7 @@ class Camera:
             zoom=end_zoom,
             duration=duration,
             start_time=start_time,
-            easing=\'ease_in_out_cubic\'
+            easing='ease_in_out_cubic'
         )
 
     def cinematic_pull(self, duration: float = 5.0, start_zoom: float = 1.2, end_zoom: float = 1.0, start_time: float = 0.0) -> None:
@@ -67,7 +67,7 @@ class Camera:
             zoom=end_zoom,
             duration=duration,
             start_time=start_time,
-            easing=\'ease_in_out_cubic\'
+            easing='ease_in_out_cubic'
         )
 
     def add_shake(self, intensity: float = None, frequency: float = None, seed: int = None) -> None:
@@ -111,6 +111,6 @@ class Camera:
             zoom=end_zoom,
             duration=duration,
             start_time=start_time,
-            easing=\'linear\' # Dolly zoom often uses linear movement for position and zoom
+            easing='linear' # Dolly zoom often uses linear movement for position and zoom
         )
 

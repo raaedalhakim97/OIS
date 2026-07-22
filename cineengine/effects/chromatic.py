@@ -59,14 +59,14 @@ class ChromaticAberrationEffect:
              1.0, -1.0, 1.0, 0.0,
             -1.0,  1.0, 0.0, 1.0,
              1.0,  1.0, 1.0, 1.0,
-        ], dtype=\'f4\')
+        ], dtype='f4')
         self.vbo = self.ctx.buffer(vertices.tobytes())
         self.vao = self.ctx.vertex_array(
             self.chromatic_program,
             [(
                 self.vbo,
-                \"2f 2f\",
-                \"in_vert\", \"in_texcoord\"
+                "2f 2f",
+                "in_vert", "in_texcoord"
             )]
         )
 

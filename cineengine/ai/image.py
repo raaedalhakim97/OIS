@@ -68,13 +68,13 @@ class AIImageGenerator:
             set_seed(seed)
             logger.debug(f"Set random seed for generation: {seed}")
 
-        logger.info(f"Generating image for prompt: \'{prompt}\'...")
+        logger.info(f"Generating image for prompt: '{prompt}'...")
         try:
             image = self.pipeline(prompt=prompt, negative_prompt=negative_prompt).images[0]
             logger.info("Image generated successfully.")
             return image
         except Exception as e:
-            logger.error(f"Error generating image for prompt \'{prompt}\': {e}")
+            logger.error(f"Error generating image for prompt '{prompt}': {e}")
             raise
 
 if __name__ == "__main__":

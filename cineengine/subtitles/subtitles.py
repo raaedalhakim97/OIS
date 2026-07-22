@@ -125,7 +125,7 @@ if __name__ == "__main__":
     print("    # subtitles_module.add(\"Slide In!\", 1.0, 3.0, animation_type=\"slide_in_from_bottom\")")
     print("    # for t in np.arange(0, 3.5, 0.1):")
     print("    #     active_renders = subtitles_module.get_rendered_subtitles(t)")
-    print("    #     for texture, pos, alpha in active_renders:
-    print("    #         print(f\"Time: {t:.1f}s, Text Texture: {texture}, Position: {pos}, Alpha: {alpha:.2f}\")")
+    print("    #     for texture, pos, alpha in active_renders:")
+    print("    #         print(f'Time: {t:.1f}s, Text Texture: {texture}, Position: {pos}, Alpha: {alpha:.2f}')")
     print("    #         texture.release() # Release texture after use")
     print("    # ctx.release()")
