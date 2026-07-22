@@ -82,13 +82,14 @@ FPH = _r.uniform(0, 6.28, FF); FSP = _r.uniform(0.1, 0.4, FF)
 def char_state(t):
     if t < T_WALKIN[1]:
         return "walk", lerp(0.12, CENTER_X, smooth(*T_WALKIN, t)), 1
-    if t < T_IDLE[1]:
-        return "stand", CENTER_X, 1
-    if t < T_LIFT[1]:
-        return "lift", CENTER_X, 1
-    if t < T_HOLD[1]:
-        return "lift", CENTER_X, 1
+    if t < T_WALKOUT[0]:
+        return "stand", CENTER_X, 1          # legs still; arm handled by `lift`
     return "walk", lerp(CENTER_X, 0.9, smooth(*T_WALKOUT, t)), 1
+
+
+def lift_amount(t):
+    # raise 9->12, hold, lower 16.5->18 (light comes down before walking off)
+    return smooth(9.0, 12.0, t) * (1 - smooth(16.5, 18.0, t))
 
 
 def render(t):
@@ -106,12 +107,12 @@ def render(t):
 
     pose, cxf, face = char_state(t)
     cx = cxf * W
-    spr, fy, odx, ody = character(150, pose, t, face)
+    lift = lift_amount(t)
+    spr, fy, odx, ody = character(150, pose, t, face, lift=lift)
 
-    # orb position + light it casts (rises during lift)
-    lift = smooth(9.0, 12.0, t) if t >= 9 else 0.0
+    # orb sits at the hand (which raises/lowers continuously) — no more floating
     ox = cx + odx
-    oy = HOR * H + ody - lift * 0.16 * H
+    oy = HOR * H + ody
     orb_pulse = 0.85 + 0.15 * math.sin(t * 3)
     glow(a, ox, oy, 34 + 16 * lift, [255, 198, 120], (0.7 + 0.4 * lift) * orb_pulse)
     # orb reflection on the water

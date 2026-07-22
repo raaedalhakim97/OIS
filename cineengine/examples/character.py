@@ -12,7 +12,7 @@ from PIL import Image, ImageDraw
 INK = (18, 20, 30)
 
 
-def character(h, pose="stand", t=0.0, face=1):
+def character(h, pose="stand", t=0.0, face=1, lift=0.0):
     S = 2
     Cw = int(h * 1.25) * S
     Ch = int(h * 1.25) * S
@@ -47,16 +47,17 @@ def character(h, pose="stand", t=0.0, face=1):
                (cx + headr * 0.9, head_y + headr * 0.2)], fill=col)   # hood tip
     d.ellipse([cx - headr, head_y - headr, cx + headr, head_y + headr], fill=col)
 
-    # arm holding the orb (raises in 'lift')
-    if pose == "lift":
-        hand_x = cx + face * 0.30 * hh
-        hand_y = neck_y - 0.34 * hh
-    elif pose == "sit":
-        hand_x = cx + face * 0.26 * hh
-        hand_y = neck_y + 0.10 * hh
+    # holding arm: interpolate the hand from carried (at the side) to raised
+    # (high) by `lift` in [0,1], so raising/lowering the light is continuous.
+    if pose == "lift":            # back-compat: 'lift' pose == fully raised
+        lift = 1.0
+    carr_x, carr_y = cx + face * 0.30 * hh, neck_y + 0.04 * hh
+    rais_x, rais_y = cx + face * 0.22 * hh, neck_y - 0.42 * hh
+    if pose == "sit":
+        hand_x, hand_y = cx + face * 0.26 * hh, neck_y + 0.10 * hh
     else:
-        hand_x = cx + face * 0.30 * hh
-        hand_y = neck_y + 0.02 * hh
+        hand_x = carr_x + (rais_x - carr_x) * lift
+        hand_y = carr_y + (rais_y - carr_y) * lift
     d.line([(cx + face * neckW, neck_y + 0.06 * hh), (hand_x, hand_y)], fill=col, width=int(0.09 * hh))
     d.ellipse([hand_x - 0.05 * hh, hand_y - 0.05 * hh, hand_x + 0.05 * hh, hand_y + 0.05 * hh], fill=col)
 
