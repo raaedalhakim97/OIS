@@ -1,10 +1,10 @@
 """
-Tiny CPU music synthesizer — ambient pad + soft piano + bass, light reverb.
-Writes a WAV you can mux under a video. No AI, no samples: pure numpy synthesis.
+Tiny CPU music synthesizer — clean piano + warm pad + bass, smooth reverb.
+Key: F major (consonant, calm). No samples, no AI: pure numpy synthesis.
 
-    python make_music.py --duration 22 --out score.wav --mood warm
+    python make_music.py --duration 22 --out score.wav
 """
-import os, sys, argparse, wave, struct
+import os, sys, argparse, wave
 import numpy as np
 
 SR = 44100
@@ -14,106 +14,101 @@ def midi(m):
     return 440.0 * 2 ** ((m - 69) / 12.0)
 
 
-def env_adsr(n, a, d, s, r, sus=0.7):
-    e = np.ones(n, np.float32) * sus
-    ai = int(a * SR); di = int(d * SR); ri = int(r * SR)
-    if ai: e[:ai] = np.linspace(0, 1, ai)
-    if di: e[ai:ai + di] = np.linspace(1, sus, di)
-    if ri: e[-ri:] = np.linspace(e[-ri] if n - ri > 0 else sus, 0, ri)
-    return e
-
-
-def piano(freq, dur, amp=0.3):
+def piano(freq, dur, amp=0.26):
+    """Clean, mellow piano-ish tone (in-phase harmonics, smooth decay)."""
     n = int(dur * SR)
     t = np.arange(n) / SR
-    # inharmonic partials with fast attack + long exp decay
-    parts = [(1, 1.0), (2, 0.5), (3, 0.28), (4, 0.14), (5, 0.07), (6, 0.04)]
-    y = np.zeros(n, np.float32)
-    for h, a in parts:
-        y += a * np.sin(2 * np.pi * freq * h * t + np.random.uniform(0, 6.28))
-    decay = np.exp(-t * 2.6)
-    atk = np.clip(t / 0.008, 0, 1)
+    y = (np.sin(2 * np.pi * freq * t)
+         + 0.5 * np.sin(2 * np.pi * 2 * freq * t)
+         + 0.22 * np.sin(2 * np.pi * 3 * freq * t)
+         + 0.10 * np.sin(2 * np.pi * 4 * freq * t))
+    decay = np.exp(-t * 3.0)
+    atk = np.clip(t / 0.006, 0, 1)
     return (y * decay * atk * amp).astype(np.float32)
 
 
-def pad(freqs, dur, amp=0.14):
+def pad(freqs, dur, amp=0.12):
     n = int(dur * SR)
     t = np.arange(n) / SR
     y = np.zeros(n, np.float32)
     for f in freqs:
-        for det in (-0.15, 0.0, 0.15):        # slight detune = warmth
+        for det in (-0.06, 0.06):                      # very slight detune = warmth
             y += np.sin(2 * np.pi * (f + det) * t)
-        y += 0.5 * np.sin(2 * np.pi * f * 2 * t)   # octave shimmer
-    y /= (len(freqs) * 3.5)
-    # slow attack/release + gentle tremolo
-    e = env_adsr(n, 0.5, 0.3, 0.85, 0.6, sus=0.85)
-    trem = 1 + 0.06 * np.sin(2 * np.pi * 0.7 * t)
+        y += 0.4 * np.sin(2 * np.pi * 2 * f * t)        # gentle octave
+    y /= (len(freqs) * 2.4)
+    a, r = int(0.5 * SR), int(0.6 * SR)
+    e = np.ones(n, np.float32) * 0.9
+    e[:a] = np.linspace(0, 1, a)
+    if r < n:
+        e[-r:] = np.linspace(0.9, 0, r)
+    trem = 1 + 0.04 * np.sin(2 * np.pi * 0.5 * t)
     return (y * e * trem * amp).astype(np.float32)
 
 
-def bass(freq, dur, amp=0.22):
+def bass(freq, dur, amp=0.20):
     n = int(dur * SR); t = np.arange(n) / SR
-    y = np.sin(2 * np.pi * freq * t) + 0.3 * np.sin(2 * np.pi * freq * 2 * t)
-    e = env_adsr(n, 0.05, 0.2, 0.7, 0.4, sus=0.7)
+    y = np.sin(2 * np.pi * freq * t) + 0.25 * np.sin(2 * np.pi * 2 * freq * t)
+    a, r = int(0.04 * SR), int(0.4 * SR)
+    e = np.ones(n, np.float32) * 0.75
+    e[:a] = np.linspace(0, 1, a)
+    if r < n:
+        e[-r:] = np.linspace(0.75, 0, r)
     return (y * e * amp).astype(np.float32)
 
 
-def reverb(x, taps=((0.045, 0.35), (0.09, 0.22), (0.17, 0.14), (0.27, 0.08))):
+def reverb(x):
+    """Smooth, dense taps (no metallic comb)."""
     out = x.copy()
-    for dt, g in taps:
-        d = int(dt * SR)
+    g = 0.42
+    for i in range(1, 10):
+        d = int((0.021 * i + 0.003) * SR)
         if d < len(x):
-            out[d:] += x[:-d] * g
+            out[d:] += x[:-d] * (g * (0.72 ** i))
     return out
 
 
 def add(buf, sig, at):
-    i = int(at * SR)
-    j = min(len(buf), i + len(sig))
+    i = int(at * SR); j = min(len(buf), i + len(sig))
     if i < len(buf):
         buf[i:j] += sig[:j - i]
 
 
 def compose(duration, mood="warm"):
-    np.random.seed(7)
+    np.random.seed(11)
     n = int(duration * SR)
     L = np.zeros(n, np.float32); R = np.zeros(n, np.float32)
 
-    # A-minor family progression (vi IV I V) — bittersweet, resolving
-    # chords as midi note sets (mid octave)
+    # F major, I–V–vi–IV (F – C – Dm – Bb): warm, resolving, gentle
+    # (chord midi notes, bass midi, consonant melody candidates)
     prog = [
-        ("Am", [57, 60, 64], 45),   # A C E, bass A2(45)
-        ("F",  [53, 57, 60], 41),   # F A C, bass F2
-        ("C",  [48, 52, 55], 48),   # C E G, bass C3
-        ("G",  [55, 59, 62], 43),   # G B D, bass G2
+        ("F",  [53, 57, 60], 41, [65, 69, 72]),   # F A C
+        ("C",  [48, 52, 55], 48, [67, 72, 76]),   # C E G
+        ("Dm", [50, 53, 57], 50, [65, 69, 74]),   # D F A
+        ("Bb", [46, 50, 53], 46, [65, 70, 74]),   # Bb D F
     ]
-    seq = prog + prog                     # 8 chords
+    seq = prog * max(1, round(duration / (len(prog) * 2.8)))
     step = duration / len(seq)
-    melody_pool = [72, 74, 76, 79, 81]    # soft high notes (C5..A5)
 
-    for k, (name, notes, broot) in enumerate(seq):
+    for k, (name, notes, broot, mel) in enumerate(seq):
         t0 = k * step
         freqs = [midi(m) for m in notes]
-        p = pad(freqs, step + 0.4, amp=0.13 * (0.6 + 0.4 * min(1, k / 3)))
-        add(L, p, t0); add(R, np.roll(p, 300), t0)          # tiny stereo spread
-        b = bass(midi(broot), step + 0.2, amp=0.2)
+        p = pad(freqs, step + 0.4, amp=0.12 * (0.7 + 0.3 * min(1, k / 3)))
+        add(L, p, t0); add(R, np.roll(p, 400), t0)
+        b = bass(midi(broot), step + 0.2, amp=0.19)
         add(L, b, t0); add(R, b, t0)
-        # sparse melody: 1–2 notes per chord, drawn from chord+scale
+        # sparse, always-consonant melody
         for mi in range(2):
-            if np.random.rand() < 0.75:
-                nm = np.random.choice(melody_pool)
-                note = piano(midi(nm), 2.2, amp=0.26)
-                at = t0 + mi * step * 0.5 + np.random.uniform(0, 0.15)
-                pan = np.random.uniform(0.3, 0.7)
+            if np.random.rand() < 0.6:
+                note = piano(midi(np.random.choice(mel)), 2.4, amp=0.24)
+                at = t0 + mi * step * 0.5 + np.random.uniform(0, 0.12)
+                pan = np.random.uniform(0.35, 0.65)
                 add(L, note * (1 - pan), at); add(R, note * pan, at)
 
     L = reverb(L); R = reverb(R)
-    mix = np.stack([L, R], axis=1)
-    # gentle master: soft-clip, normalize, fade in/out
-    mix = np.tanh(mix * 1.4)
-    mix /= (np.max(np.abs(mix)) + 1e-6)
-    mix *= 0.85
-    fi = int(1.2 * SR); fo = int(2.0 * SR)
+    mix = np.stack([L, R], 1)
+    mix = np.tanh(mix * 1.25)
+    mix /= (np.max(np.abs(mix)) + 1e-6); mix *= 0.85
+    fi, fo = int(1.2 * SR), int(2.0 * SR)
     mix[:fi] *= np.linspace(0, 1, fi)[:, None]
     mix[-fo:] *= np.linspace(1, 0, fo)[:, None]
     return mix
@@ -133,7 +128,7 @@ def main():
     ap.add_argument("--mood", default="warm")
     a = ap.parse_args()
     write_wav(a.out, compose(a.duration, a.mood))
-    print(f"wrote {a.out} ({a.duration}s)")
+    print(f"wrote {a.out} ({a.duration}s, F major)")
 
 
 if __name__ == "__main__":

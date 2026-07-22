@@ -135,13 +135,13 @@ def render(t):
     d = ImageDraw.Draw(im, "RGBA")
     tfade = smooth(0.5, 1.5, t) * (1 - smooth(4.5, 5.5, t))
     if tfade > 0.01:
-        for txt, f, yy in (("THE LIGHTKEEPER", FT, 0.10), ("ep. 1 · the answer", FS, 0.10 + 0.045)):
+        for txt, f, yy in (("THE ANSWER", FT, 0.10), ("part 1 · the sky", FS, 0.10 + 0.045)):
             bb = d.textbbox((0, 0), txt, font=f)
             d.text(((W - (bb[2] - bb[0])) // 2, int(H * yy)), txt, font=f,
                    fill=(235, 232, 226, int(230 * tfade)))
     cfade = smooth(14.5, 15.5, t) * (1 - smooth(22, 23.2, t))
     if cfade > 0.01:
-        txt = "raise your light —\nsomething always answers."
+        txt = "ask the sky,\nand it answers in light."
         yy = int(H * 0.12)
         for ln in txt.split("\n"):
             bb = d.textbbox((0, 0), ln, font=FS)
@@ -222,9 +222,9 @@ def main():
     write_wav("ep1.wav", build_audio())
     ff = imageio_ffmpeg.get_ffmpeg_exe()
     subprocess.run([ff, "-y", "-i", "ep1_silent.mp4", "-i", "ep1.wav", "-c:v", "copy",
-                    "-c:a", "aac", "-b:a", "192k", "-shortest", "lightkeeper_ep1.mp4"],
+                    "-c:a", "aac", "-b:a", "192k", "-shortest", "answer_part1.mp4"],
                    check=True, capture_output=True)
-    print("Done -> lightkeeper_ep1.mp4")
+    print("Done -> answer_part1.mp4")
 
 
 if __name__ == "__main__":
