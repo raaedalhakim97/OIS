@@ -1,8 +1,8 @@
 """
-THE CYCLE · part 1 — "The Gift"
-The old keeper walks away, leaving a light in the dark. The small one lifts it
-awake. The melody is handed over: the old voice fades, the child's voice answers
-and takes it. Sparse, slow, dreamy call-and-response (F major). ~22s.
+THE CYCLE · part 1 — "The Gift"  (~60s, fuller narration, interactive piano)
+The old keeper sets the light down and walks on; the small one, afraid, finally
+lifts it — and it remembers how to shine. Event-synced call-and-response piano
+runs throughout (set-down, footsteps, the reach, the awakening). F major.
 Opening framed to match part 5's ending (the loop).
 """
 import os, sys, math, argparse
@@ -16,10 +16,9 @@ from make_music import SR, midi, piano, pad, bass, reverb, add, write_wav
 
 W, H = 1080, 1920
 FPS = 24
-DUR = 22.0
+DUR = 60.0
 GROUND = 0.80 * H
 fx = FX(W, H)
-CHILDX = 0.46
 LIGHTX = 0.5
 
 
@@ -33,7 +32,7 @@ def font(sz):
               "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"):
         if os.path.exists(p): return ImageFont.truetype(p, sz)
     return ImageFont.load_default()
-FT = font(58); FS = font(40)
+FT = font(58); FS = font(42)
 
 
 def glow(a, cx, cy, rad, color, alpha):
@@ -60,59 +59,89 @@ def build_bg():
     return np.asarray(im, np.float32)
 BG = build_bg()
 _r = np.random.default_rng(15)
-SX = _r.integers(0, W, 180); SY = _r.integers(0, int(GROUND * 0.98), 180)
-SB = _r.uniform(0.3, 1.0, 180); SPH = _r.uniform(0, 6.28, 180)
+SX = _r.integers(0, W, 190); SY = _r.integers(0, int(GROUND * 0.98), 190)
+SB = _r.uniform(0.3, 1.0, 190); SPH = _r.uniform(0, 6.28, 190)
+
+# ---- fuller narration ----
+NARR = [
+    (1.5, 7.0, "in the beginning,\nthere was only dark."),
+    (7.5, 13.0, "someone, before you,\ncarried a light."),
+    (14.0, 20.0, "when they grew tired,\nthey did not put it out."),
+    (20.5, 26.0, "they set it down —\nand walked on."),
+    (26.5, 32.0, "they left it.\nfor you."),
+    (33.0, 39.0, "you were afraid\nto touch it."),
+    (39.5, 45.0, "but the dark was colder\nthan the fear."),
+    (45.5, 51.0, "so you reached —\nand lifted it."),
+    (51.5, 56.0, "and it remembered\nhow to shine."),
+    (56.0, 60.0, "the light is never yours.\nonly yours to carry."),
+]
 
 
 def render(t):
     a = BG.copy()
-    awake = smooth(11.5, 15.5, t)
+    awake = smooth(45.0, 51.0, t)
     tw = 0.5 + 0.5 * np.sin(t * 2 + SPH)
-    a[SY, SX] += (SB * tw * (0.2 + 0.8 * awake))[:, None] * np.array([215, 218, 236])
+    a[SY, SX] += (SB * tw * (0.18 + 0.82 * awake))[:, None] * np.array([215, 218, 236])
 
-    # the old keeper walks away into the dark, fading
-    oldx = lerp(LIGHTX, 0.9, smooth(0.0, 7.0, t)) * W
-    oldalpha = 1 - smooth(2.5, 7.5, t)
-    if oldalpha > 0.02:
-        ospr, ofy, _, _ = character(150, "walk", t, 1)
-        o = ospr.copy(); o.putalpha(ospr.split()[3].point(lambda p: int(p * oldalpha)))
-        a_im = Image.fromarray(a.clip(0, 255).astype(np.uint8))
-        a_im.paste(o, (int(oldx - o.size[0] / 2), int(GROUND - ofy)), o)
-        a = np.asarray(a_im, np.float32)
+    # OLD keeper: holds the light, sets it down (14-16), walks away & fades (16-24)
+    setdown = smooth(14.0, 16.0, t)
+    oldx = lerp(LIGHTX, 0.92, smooth(16.0, 24.0, t)) * W
+    oldalpha = 1 - smooth(17.5, 24.0, t)
+    old_lift = (1 - setdown) * 0.15          # was holding it a bit up, lowers on set-down
+    ospr, ofy, oodx, oody = character(150, "walk" if t > 16 else "stand", t, 1, lift=old_lift)
+    old_hand = (LIGHTX * W + oodx, GROUND + oody - old_lift * 0.15 * H) if t < 16 else None
 
-    # the child approaches and lifts the light
-    childx = lerp(0.40, CHILDX, smooth(5.0, 8.5, t)) * W
-    pick = smooth(9.0, 11.0, t)
-    lift = smooth(11.5, 14.0, t) * (1 - smooth(18.0, 19.5, t))
+    # CHILD: fades in, approaches, reaches, lifts
+    appear = smooth(17.0, 21.0, t)
+    childx = lerp(0.34, 0.45, smooth(30.0, 40.0, t)) * W
+    lift = smooth(45.0, 50.0, t) * (1 - smooth(57.0, 60.0, t))
     cspr, cfy, codx, cody = character(105, "stand", t, 1, lift=lift)
-    chx = childx + codx
-    chy = GROUND + cody - lift * 0.15 * H
-    # orb: on the ground first, then rises into the child's hand, then lifts
-    gx, gy = LIGHTX * W, GROUND - 16
-    ox = lerp(gx, chx, pick); oy = lerp(gy, chy, pick)
-    obr = (0.3 + 0.2 * pick) if t < 11 else (0.5 + 0.9 * awake)
+    child_hand = (childx + codx, GROUND + cody - lift * 0.15 * H)
+
+    # THE LIGHT: old hand -> ground -> child hand -> lifted
+    ground_pos = (LIGHTX * W, GROUND - 16)
+    if t < 14 and old_hand:
+        ox, oy = old_hand
+    elif t < 16 and old_hand:
+        ox, oy = lerp(old_hand[0], ground_pos[0], setdown), lerp(old_hand[1], ground_pos[1], setdown)
+    else:
+        pick = smooth(40.0, 43.0, t)
+        ox = lerp(ground_pos[0], child_hand[0], pick)
+        oy = lerp(ground_pos[1], child_hand[1], pick)
+    if t < 16:
+        obr = 0.55
+    elif t < 43:
+        obr = 0.28                            # dim, waiting on the ground
+    else:
+        obr = 0.5 + 0.9 * awake
     pulse = 0.85 + 0.15 * math.sin(t * 3)
     glow(a, ox, oy, 26 + 22 * lift + 14 * awake, [255, 198, 120], obr * pulse)
     if awake > 0.02:
-        glow(a, ox, oy, 120 * awake + 20, [255, 200, 140], 0.35 * awake)
+        glow(a, ox, oy, 130 * awake + 20, [255, 200, 140], 0.35 * awake)
 
     im = Image.fromarray(a.clip(0, 255).astype(np.uint8))
-    im.paste(cspr, (int(childx - cspr.size[0] / 2), int(GROUND - cfy)), cspr)
+    if oldalpha > 0.02:
+        o = ospr.copy(); o.putalpha(ospr.split()[3].point(lambda p: int(p * oldalpha)))
+        im.paste(o, (int(oldx - o.size[0] / 2), int(GROUND - ofy)), o)
+    if appear > 0.02:
+        c = cspr.copy(); c.putalpha(cspr.split()[3].point(lambda p: int(p * appear)))
+        im.paste(c, (int(childx - c.size[0] / 2), int(GROUND - cfy)), c)
 
     d = ImageDraw.Draw(im, "RGBA")
-    tfade = smooth(0.6, 1.6, t) * (1 - smooth(4.4, 5.2, t))
+    tfade = smooth(0.4, 1.4, t) * (1 - smooth(11.5, 12.5, t))
     if tfade > 0.01:
-        for txt, f, yy in (("THE CYCLE", FT, 0.10), ("part 1 · the gift", FS, 0.145)):
+        for txt, f, yy in (("THE CYCLE", FT, 0.08), ("part 1 · the gift", FS, 0.125)):
             bb = d.textbbox((0, 0), txt, font=f)
             d.text(((W - (bb[2] - bb[0])) // 2, int(H * yy)), txt, font=f,
-                   fill=(232, 230, 224, int(230 * tfade)))
-    cfade = smooth(15.5, 16.5, t) * (1 - smooth(20.4, 21.4, t))
-    if cfade > 0.01:
-        yy = int(H * 0.12)
-        for ln in ["the light is never yours —", "only yours to carry."]:
-            bb = d.textbbox((0, 0), ln, font=FS)
-            d.text(((W - (bb[2] - bb[0])) // 2, yy), ln, font=FS, fill=(228, 226, 220, int(220 * cfade)))
-            yy += int((bb[3] - bb[1]) * 1.7)
+                   fill=(232, 230, 224, int(225 * tfade)))
+    for (s, e, txt) in NARR:
+        if s <= t <= e:
+            fade = np.interp(t, [s, s + 0.8, e - 0.8, e], [0, 1, 1, 0])
+            yy = int(H * 0.80)
+            for ln in txt.split("\n"):
+                bb = d.textbbox((0, 0), ln, font=FS)
+                d.text(((W - (bb[2] - bb[0])) // 2, yy), ln, font=FS, fill=(228, 226, 220, int(220 * fade)))
+                yy += int((bb[3] - bb[1]) * 1.6)
 
     frame = np.asarray(im, np.float32)
     frame = fx.bloom(frame, sigma=8, thr=203, gain=0.72)
@@ -121,8 +150,8 @@ def render(t):
     return frame.clip(0, 255).astype(np.uint8)
 
 
-# ---- audio: sparse, slow, dreamy hand-over of the melody ----
-def footstep(amp=0.15, dur=0.16):
+# ---- interactive call-&-response piano (runs throughout), sparse & dreamy ----
+def footstep(amp=0.13, dur=0.16):
     n = int(dur * SR); t = np.arange(n) / SR
     return ((np.sin(2 * np.pi * 66 * t) * np.exp(-t * 34)
              + np.random.randn(n).astype(np.float32) * np.exp(-t * 70) * 0.5) * amp)
@@ -132,31 +161,48 @@ def build_audio():
     n = int(DUR * SR)
     Lc = np.zeros(n, np.float32); Rc = np.zeros(n, np.float32)
     def st(sig, at, pan): add(Lc, sig * (1 - pan), at); add(Rc, sig * pan, at)
-    # sparse pad bed (F -> C -> Dm -> Bb), quiet
-    prog = [([53, 57, 60], 41), ([48, 52, 55], 48), ([50, 53, 57], 50), ([46, 50, 53], 46)] * 2
+    def note(m, at, pan, amp=0.24, dur=3.2, echo=True):
+        st(piano(midi(m), dur, amp=amp), at, pan)
+        if echo:                                   # whispered answer on the other side
+            st(piano(midi(m), dur * 0.8, amp=amp * 0.4), at + 0.55, 1 - pan)
+
+    # soft pad + bass bed across the whole minute
+    prog = [([53, 57, 60], 41), ([48, 52, 55], 48), ([50, 53, 57], 50), ([46, 50, 53], 46)]
+    prog = prog * 3
     step = DUR / len(prog)
     for k, (notes, br) in enumerate(prog):
         p = pad([midi(m) for m in notes], step + 0.4, amp=0.07)
         add(Lc, p, k * step); add(Rc, np.roll(p, 350), k * step)
-        add(Lc, bass(midi(br), step + 0.2, amp=0.12), k * step)
-        add(Rc, bass(midi(br), step + 0.2, amp=0.12), k * step)
-    # old keeper's footsteps fading as he leaves
+        add(Lc, bass(midi(br), step + 0.2, amp=0.11), k * step)
+        add(Rc, bass(midi(br), step + 0.2, amp=0.11), k * step)
+
+    # phase A — the old keeper's slow theme (right), sparse
+    note(72, 3.0, 0.72, 0.22); note(69, 6.5, 0.72, 0.20); note(65, 10.0, 0.72, 0.17)
+    # set-down (a soft grounded note) + footsteps walking away
+    note(60, 15.2, 0.5, 0.20, echo=False)
     for i in range(6):
-        st(footstep(amp=0.14 * (1 - i / 7)), 0.6 + i * 0.55, 0.6 + i * 0.03)
-    # THE HAND-OVER (sparse, slow): old voice descends & fades (right),
-    # the child's voice answers ascending & takes it home (left/center).
-    for m, at, amp in [(72, 11.0, 0.26), (69, 12.4, 0.20), (65, 13.8, 0.13)]:   # old, fading
-        st(piano(midi(m), 3.0, amp=amp), at, 0.72)
-    for m, at, amp in [(65, 12.2, 0.18), (69, 13.6, 0.24), (72, 15.0, 0.28), (77, 16.6, 0.26)]:  # child rising
-        st(piano(midi(m), 3.2, amp=amp), at, 0.32)
-    # soft echoes (opposite side) for the 'conversation' feel
-    for m, at in [(72, 15.7), (77, 17.3)]:
-        st(piano(midi(m), 2.6, amp=0.10), at, 0.68)
-    st(piano(midi(65), 3.6, amp=0.20), 18.4, 0.5)      # settle home on F
+        st(footstep(amp=0.12 * (1 - i / 8)), 16.5 + i * 0.7, 0.62 + i * 0.03)
+    note(65, 22.5, 0.7, 0.14)                        # a last faint call as he vanishes
+    # phase C — the child alone, hesitant, questioning (left), lots of space
+    note(69, 27.0, 0.3, 0.16); note(67, 31.5, 0.3, 0.15); note(72, 36.0, 0.3, 0.17)
+    note(65, 40.5, 0.3, 0.18)                        # the reach
+    # phase D — the AWAKENING: hand-over call & response, then a bloom
+    for m, at, p, amp in [(72, 45.0, 0.72, 0.20), (69, 47.0, 0.72, 0.16), (65, 49.0, 0.72, 0.12)]:
+        note(m, at, p, amp)                          # old voice, fading (right)
+    for m, at, p, amp in [(65, 45.8, 0.30, 0.18), (69, 47.8, 0.30, 0.22), (72, 49.8, 0.30, 0.26)]:
+        note(m, at, p, amp)                          # child voice, rising (left)
+    for i, m in enumerate([77, 81, 84, 86]):         # stars answer, soft cascade
+        st(piano(midi(m), 2.2, amp=0.09), 50.4 + i * 0.4, 0.5 + (i - 2) * 0.08)
+    # phase E — resolve home to F, a final gentle exchange
+    for m in [65, 69, 72]:
+        st(piano(midi(m), 3.4, amp=0.14), 54.2, 0.5)
+    note(77, 54.8, 0.32, 0.20); note(72, 56.4, 0.68, 0.18)
+    st(piano(midi(65), 4.0, amp=0.22), 57.8, 0.5)    # settle on F (home)
+
     Lc = reverb(Lc); Rc = reverb(Rc)
     mix = np.tanh(np.stack([Lc, Rc], 1) * 1.2)
     mix /= (np.max(np.abs(mix)) + 1e-6); mix *= 0.9
-    fi, fo = int(SR), int(2.5 * SR)
+    fi, fo = int(1.5 * SR), int(3 * SR)
     mix[:fi] *= np.linspace(0, 1, fi)[:, None]; mix[-fo:] *= np.linspace(1, 0, fo)[:, None]
     return mix
 
@@ -170,13 +216,13 @@ def main():
         Image.fromarray(render(a.preview)).save("e2p_prev.png"); print("preview saved"); return
     n = int(DUR * FPS)
     writer = imageio.get_writer("e2p_silent.mp4", fps=FPS, codec="libx264",
-                                output_params=["-crf", "18", "-preset", "medium",
+                                output_params=["-crf", "19", "-preset", "medium",
                                                "-pix_fmt", "yuv420p", "-movflags", "+faststart"],
                                 macro_block_size=8, ffmpeg_log_level="error")
     print(f"Rendering {n} frames ...")
     for i in range(n):
         writer.append_data(render(i / FPS))
-        if (i + 1) % 24 == 0: print(f"  {i+1}/{n} ({(i+1)/FPS:.0f}s)")
+        if (i + 1) % 48 == 0: print(f"  {i+1}/{n} ({(i+1)/FPS:.0f}s)")
     writer.close()
     write_wav("e2p.wav", build_audio())
     ff = imageio_ffmpeg.get_ffmpeg_exe()
