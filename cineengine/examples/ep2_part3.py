@@ -22,14 +22,14 @@ KX = 0.5
 fx = FX(W, H)
 yy, xx = fx.yy, fx.xx
 
-# each other: (x, feet_y, size, midi note, connect_time)  notes stack to F major
+# each other: (x, feet_y, size, midi note, connect_time)  warm low F-major stack
 OTHERS = [
-    (0.18, 0.80, 74, 65, 15.0),   # F
-    (0.82, 0.785, 70, 69, 21.0),  # A
-    (0.31, 0.72, 56, 72, 28.0),   # C
-    (0.70, 0.71, 54, 77, 35.0),   # F
-    (0.13, 0.68, 46, 81, 41.0),   # A
-    (0.89, 0.695, 48, 84, 47.0),  # C
+    (0.18, 0.80, 74, 53, 15.0),   # F3
+    (0.82, 0.785, 70, 57, 21.0),  # A3
+    (0.31, 0.72, 56, 60, 28.0),   # C4
+    (0.70, 0.71, 54, 65, 35.0),   # F4
+    (0.13, 0.68, 46, 69, 41.0),   # A4
+    (0.89, 0.695, 48, 72, 47.0),  # C5
 ]
 
 
@@ -82,7 +82,7 @@ OSPR = [character(sz, "stand", 0.0, 1 if ox < 0.5 else -1, 0.0)
 NODE_X = [0.5] + [o[0] for o in OTHERS]
 _pairs = [(0, 1), (0, 2), (0, 3), (0, 4), (0, 5), (0, 6),
           (1, 3), (3, 5), (5, 2), (2, 4), (4, 6), (6, 1)]
-_scale = [65, 67, 69, 70, 72, 74, 76, 77, 79, 81, 83, 84]   # F G A Bb C D E F G A B C
+_scale = [53, 55, 57, 58, 60, 62, 64, 65, 67, 69, 71, 72]   # F3 up an F-major scale (warm)
 GRAPH_T0 = 48.0
 EDGES = [(a, b, GRAPH_T0 + i * 0.8, _scale[i]) for i, (a, b) in enumerate(_pairs)]
 
@@ -193,7 +193,7 @@ def build_audio():
         add(Rc, bass(midi(br), step + 0.2, amp=0.11), k * step)
 
     # a light continuous conversation underneath (kept sparse so connections shine)
-    PENTA = [65, 67, 69, 72, 74]
+    PENTA = [58, 60, 62, 65, 67]        # warm low pentatonic
     rng = np.random.default_rng(5)
     tt = 5.0
     while tt < 54:
@@ -204,9 +204,9 @@ def build_audio():
     # THE CONNECTIONS — keeper 'call' then the other's ringing 'response' (long,
     # so they STACK into a growing F-major chord as more light up)
     for (ox, oy, sz, m, ct) in OTHERS:
-        st(piano(midi(60 + (m - 65) // 2 if m > 65 else 60), 1.8, amp=0.14), ct - 0.5, 0.5)  # call
-        st(piano(midi(m), 7.0, amp=0.22), ct, ox)                                            # response, panned to it
-        st(piano(midi(m), 4.5, amp=0.09), ct + 0.6, 1 - ox)                                  # echo across
+        st(piano(midi(m - 12), 1.8, amp=0.13), ct - 0.5, 0.5)   # keeper's low call
+        st(piano(midi(m), 7.0, amp=0.22), ct, ox)               # the other's answer (warm), panned to it
+        st(piano(midi(m), 4.5, amp=0.09), ct + 0.6, 1 - ox)     # echo across
     # THE LIGHT-GRAPH: each edge speaks a single note, stepping up an F scale
     # (the lights' language). Panned to where the edge lands.
     for (ai, bi, et, note) in EDGES:
