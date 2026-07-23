@@ -168,10 +168,53 @@ def owl(amp=0.07, root=48):
     return seg * amp
 
 
-def grass_step(amp=0.028, dur=0.24):
+def grass_step(amp=0.010, dur=0.2, seed=None):
+    # A tiny light figure barely crunches grass — a long dense crunch reads as a
+    # GIANT (crunch == weight). So this is mostly a soft, short 'tuft': the grass
+    # cushion giving under a small foot (a brief muffled low-passed puff), with
+    # only a FEW faint dry ticks sprinkled on top (a hint of blades, not a crush).
+    # Very short and quiet = small and calm.
+    rng = np.random.default_rng(seed)
     n = int(dur * SR); t = np.arange(n) / SR
-    nse = np.convolve(np.random.randn(n).astype(np.float32), np.ones(22) / 22, mode="same")
-    return (nse * np.exp(-t * 15) * np.clip(t / 0.008, 0, 1)) * amp
+    # soft cushion: short muffled noise puff, gentle attack, quick soft decay
+    cush = np.convolve(rng.standard_normal(n).astype(np.float32), np.ones(24) / 24, mode="same")
+    cush *= (np.clip(t / 0.012, 0, 1) * np.exp(-t * 55))          # ~12ms swell, brief
+    # a few faint dry ticks (sparse) — just a suggestion of grass blades
+    energy = np.exp(-t / 0.03)
+    trig = rng.random(n) < 0.004 * energy
+    ticks = np.zeros(n, np.float32)
+    for idx in np.where(trig)[0]:
+        gl = int(rng.integers(12, 28)); gt = np.arange(gl) / SR
+        gr = np.convolve(np.diff(rng.standard_normal(gl + 1).astype(np.float32)),
+                         np.ones(4) / 4, mode="same") * np.exp(-gt * 2000)
+        j = min(idx + gl, n)
+        ticks[idx:j] += gr[: j - idx] * energy[idx] * rng.uniform(0.2, 0.5)
+    step = cush * 0.9 + ticks * 0.5
+    step /= (np.max(np.abs(step)) + 1e-9)
+    return step.astype(np.float32) * amp
+
+
+# F-major scale degrees (warm low register) — the ground the light walks/sings on
+FSCALE = [53, 55, 57, 58, 60, 62, 64, 65]
+
+
+def step_note(m, amp=0.15, dur=3.2, seed=None):
+    # An interactive musical step: each footfall IS a soft warm piano note, with a
+    # faint grass tuft under it just to ground the note in the world. The light
+    # sings its motion — every step adds a note to the walking phrase.
+    note = piano(midi(m), dur, amp)
+    tuft = grass_step(amp * 0.32, seed=seed)
+    out = note.copy()
+    out[:len(tuft)] += tuft
+    return out
+
+
+def walk_notes(st, times, notes, amp=0.15, sway=0.14, base_pan=0.5):
+    # place a piano step-note at each footfall time, panning gently L/R with each
+    # foot, so a walk becomes a little F-major phrase. `st` is the stereo placer.
+    for i, (at, m) in enumerate(zip(times, notes)):
+        pan = base_pan + (sway if i % 2 else -sway)
+        st(step_note(m, amp, seed=i * 7 + 1), at, max(0.05, min(0.95, pan)))
 
 
 def build_audio():
