@@ -31,6 +31,25 @@ def character(h, pose="stand", t=0.0, face=1, lift=0.0):
     neckW = 0.13 * hh
     sway = math.sin(t * 3.0) * 0.02 * hh if pose == "walk" else 0.0
 
+    if pose == "front":                 # facing the viewer (for direct address)
+        d.ellipse([cx - 0.13 * hh, base - 0.02 * hh, cx - 0.02 * hh, base + 0.06 * hh], fill=col)
+        d.ellipse([cx + 0.02 * hh, base - 0.02 * hh, cx + 0.13 * hh, base + 0.06 * hh], fill=col)
+        d.polygon([(cx - neckW, neck_y), (cx + neckW, neck_y),
+                   (cx + baseW, base), (cx - baseW, base)], fill=col)
+        d.ellipse([cx - baseW, base - 0.10 * hh, cx + baseW, base + 0.06 * hh], fill=col)
+        d.polygon([(cx - 0.6 * headr, head_y - headr * 0.5), (cx, head_y - headr * 1.8),
+                   (cx + 0.6 * headr, head_y - headr * 0.5)], fill=col)     # hood tip up
+        d.ellipse([cx - headr, head_y - headr, cx + headr, head_y + headr], fill=col)
+        hand_x, hand_y = cx, neck_y + 0.30 * hh                            # orb in both hands, front
+        d.line([(cx - neckW, neck_y + 0.06 * hh), (hand_x - 0.05 * hh, hand_y)], fill=col, width=int(0.09 * hh))
+        d.line([(cx + neckW, neck_y + 0.06 * hh), (hand_x + 0.05 * hh, hand_y)], fill=col, width=int(0.09 * hh))
+        ey = head_y - headr * 0.05; er = headr * 0.17                       # two warm eye-glints
+        for s_ in (-1, 1):
+            exx = cx + s_ * headr * 0.42
+            d.ellipse([exx - er, ey - er, exx + er, ey + er], fill=(255, 216, 150, 255))
+        im = im.resize((Cw // S, Ch // S), Image.LANCZOS)
+        return im, base / S, 0.0, (hand_y - base) / S - 4
+
     # cloak: flared body with a rounded hem
     d.polygon([(cx - neckW, neck_y), (cx + neckW, neck_y),
                (cx + baseW + sway, base), (cx - baseW - sway, base)], fill=col)
