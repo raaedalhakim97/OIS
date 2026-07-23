@@ -20,6 +20,7 @@ from character import character
 from make_music import SR, midi, piano, pad, bass, reverb, add, write_wav
 from ep3_part1 import wind_gust, owl, crickets, walk_notes
 import title_card as tc
+import world
 
 W, H = 1080, 1920
 FPS = 24
@@ -89,10 +90,7 @@ def build_bg():
     d.ellipse([0.4 * W, GROUND - 0.04 * H, 1.3 * W, GROUND + 0.3 * H], fill=(19, 21, 38))
     d.rectangle([0, int(GROUND), W, H], fill=(12, 13, 26))
     return np.asarray(im, np.float32)
-BG = build_bg()
-_r = np.random.default_rng(11)
-STARX = _r.integers(0, W, 140); STARY = _r.integers(0, int(GROUND * 0.9), 140)
-STARB = _r.uniform(0.3, 1.0, 140); STARPH = _r.uniform(0, 6.28, 140)
+BG = world.build("fading_edge")             # richer, colder world for the battle
 
 # ---- the village of light: many notes across the Fading Edge (never an empty frame) ----
 _v = np.random.default_rng(23)
@@ -242,8 +240,7 @@ def draw_glyphs(im, ts):
 
 def story(ts):
     a = BG.copy()
-    tw = 0.5 + 0.5 * np.sin(ts * 2 + STARPH)
-    a[STARY, STARX] += (STARB * tw * 0.45)[:, None] * np.array([210, 214, 234])
+    world.atmosphere(a, ts, "fading_edge")
 
     # the Silence advancing from the right, then driven back at the great chord
     adv = smooth(8, 78, ts) * (1 - 0.7 * smooth(92, 100, ts))
@@ -299,15 +296,23 @@ def story(ts):
         spr, fy, odx, ody = character(96, "stand", 0.0, -1)
         hollow_sprites.append((spr, hx, hy, fy, 0.9 - 0.4 * recoil))
 
-    # the Keeper — races along the front line, lantern high
-    kx = 0.12 + 0.72 * smooth(24, 100, ts)
-    kx = clamp(kx, 0.08, 0.9)
-    ky = 0.80
+    # the Keeper — races along the front line, lantern high. Weighted motion
+    # (analytic): velocity drives lean, cloak drag, body-dip, and a lagging lantern.
+    def kxf(u): return clamp(0.12 + 0.72 * smooth(24, 100, u), 0.08, 0.9)
+    kx = kxf(ts)
+    vx = (kxf(ts + 0.05) - kxf(ts - 0.05)) / 0.10
+    walking = (24 < ts < 100) and abs(vx) > 0.0025
+    dip = -abs(math.sin(ts * 6)) * 0.018 * H if walking else 0.0    # body dips on each footfall
     lift = 0.5 + 0.5 * smooth(26, 34, ts)
-    lean = 0.05 * math.sin(ts * 1.2) + 0.07 * smooth(24, 100, ts)
-    kspr, kfy, kodx, kody = character(130, "walk" if 24 < ts < 100 else "stand", ts, 1, lift=lift, lean=lean)
-    kox = kx * W + kodx; koy = ky * H + kody
-    glow(a, kox, koy, 26 + 6 * lift, GOLD, 1.0 * (0.9 + 0.1 * math.sin(ts * 3)))
+    lean = clamp(vx * 3.5, -0.14, 0.14) + 0.035 * math.sin(ts * 1.1)
+    trail = clamp(-vx * 1.6, -0.09, 0.09)
+    face = 1 if vx >= -1e-4 else -1
+    kspr, kfy, kodx, kody = character(130, "walk" if walking else "stand", ts, face,
+                                      lift=lift, lean=lean, trail=trail)
+    kx_px = kx * W; ky_px = 0.80 * H + dip
+    kox = kx_px + kodx; koy = ky_px + kody
+    lkx = kxf(ts - 0.12) * W + kodx                                # lantern trails the hand
+    glow(a, 0.6 * kox + 0.4 * lkx, koy, 26 + 6 * lift, GOLD, 1.0 * (0.9 + 0.1 * math.sin(ts * 3)))
 
     im = Image.fromarray(a.clip(0, 255).astype(np.uint8))
     for (spr, hx, hy, fy, al) in hollow_sprites:
@@ -316,7 +321,7 @@ def story(ts):
             if al < 0.999:
                 alpha = layer.split()[3].point(lambda v: int(v * al)); layer.putalpha(alpha)
             im.paste(layer, (int(hx - spr.size[0] / 2), int(hy - fy)), layer)
-    im.paste(kspr, (int(kx * W - kspr.size[0] / 2), int(ky * H - kfy)), kspr)
+    im.paste(kspr, (int(kx_px - kspr.size[0] / 2), int(ky_px - kfy)), kspr)
 
     # the Sunderer watching (climax hook) — a vast cold gaze on the horizon
     if ts > 124:
