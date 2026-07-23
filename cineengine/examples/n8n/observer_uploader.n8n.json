@@ -1,0 +1,122 @@
+{
+  "name": "Observer World — Video Intake & Upload",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "observer-upload",
+        "responseMode": "responseNode",
+        "options": {
+          "binaryPropertyName": "file"
+        }
+      },
+      "id": "b1a1e001-0000-4000-8000-000000000001",
+      "name": "Webhook — receive video",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [-360, 300],
+      "webhookId": "observer-upload-webhook"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "m1", "name": "chapter",  "value": "={{ $json.body.chapter }}",  "type": "string" },
+            { "id": "m2", "name": "episode",  "value": "={{ $json.body.episode }}",  "type": "string" },
+            { "id": "m3", "name": "title",    "value": "={{ $json.body.title }}",    "type": "string" },
+            { "id": "m4", "name": "land",     "value": "={{ $json.body.land }}",     "type": "string" },
+            { "id": "m5", "name": "caption",  "value": "={{ $json.body.caption }}",  "type": "string" },
+            { "id": "m6", "name": "filename", "value": "={{ $json.body.filename || ('ch' + $json.body.chapter + '_ep' + $json.body.episode + '.mp4') }}", "type": "string" }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "b1a1e002-0000-4000-8000-000000000002",
+      "name": "Metadata",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-120, 300]
+    },
+    {
+      "parameters": {
+        "name": "={{ $json.filename }}",
+        "driveId": { "__rl": true, "mode": "list", "value": "My Drive" },
+        "folderId": { "__rl": true, "mode": "list", "value": "root", "cachedResultName": "/ (Root folder)" },
+        "inputDataFieldName": "file",
+        "options": {}
+      },
+      "id": "b1a1e003-0000-4000-8000-000000000003",
+      "name": "Upload to Google Drive",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [140, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ ok: true, fileId: $json.id, name: $json.name, link: $json.webViewLink, title: $('Metadata').item.json.title, episode: $('Metadata').item.json.episode }) }}",
+        "options": {}
+      },
+      "id": "b1a1e004-0000-4000-8000-000000000004",
+      "name": "Respond OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [400, 300]
+    },
+    {
+      "parameters": {
+        "content": "## Observer World — Video Intake\n\n**What this does**\nReceives a rendered episode (POST, multipart/form-data) with the video as the binary field **file** plus metadata fields, uploads it to Google Drive, and replies with the file link.\n\n**Expected form fields**\n- `file` — the .mp4 (binary)\n- `chapter`, `episode`, `title`, `land`, `caption`, `filename`\n\n**Setup**\n1. Open **Upload to Google Drive** → connect your Google Drive credential, pick a target **folder**.\n2. **Activate** the workflow (top-right toggle).\n3. Copy the **Production URL** from the Webhook node and send it back to Claude.\n\n**Auth (recommended)**\nOn the Webhook node set *Authentication → Header Auth* and create a header credential (e.g. `X-Observer-Key: <secret>`); give Claude the header name + value so it can post.",
+        "height": 360,
+        "width": 340,
+        "color": 4
+      },
+      "id": "b1a1e005-0000-4000-8000-000000000005",
+      "name": "README",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-360, -140]
+    },
+    {
+      "parameters": {
+        "content": "## Where to publish\n\nGoogle Drive is the default landing spot (safe, no platform API needed). To auto-post instead of / in addition to Drive, insert a node **after Metadata** using the binary field **file**:\n\n- **YouTube**: `YouTube → Upload` node (native). Map `title` and `caption` → description.\n- **TikTok / Instagram**: use an **HTTP Request** node to their Content Posting API (or a community node). The binary is in property `file`.\n\nKeep the `Respond OK` node last so Claude gets a confirmation + link.",
+        "height": 300,
+        "width": 340,
+        "color": 5
+      },
+      "id": "b1a1e006-0000-4000-8000-000000000006",
+      "name": "Publish options",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [140, -140]
+    },
+    {
+      "parameters": {
+        "content": "### Note on the binary field name\nn8n stores an uploaded file under a binary property named after the form field — here **file**. If your n8n version names it `data` instead, change **inputDataFieldName** on the Drive node to `data`.",
+        "height": 200,
+        "width": 320,
+        "color": 3
+      },
+      "id": "b1a1e007-0000-4000-8000-000000000007",
+      "name": "Binary note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [140, 520]
+    }
+  ],
+  "connections": {
+    "Webhook — receive video": {
+      "main": [[{ "node": "Metadata", "type": "main", "index": 0 }]]
+    },
+    "Metadata": {
+      "main": [[{ "node": "Upload to Google Drive", "type": "main", "index": 0 }]]
+    },
+    "Upload to Google Drive": {
+      "main": [[{ "node": "Respond OK", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "pinData": {},
+  "meta": { "instanceId": "observer-world" }
+}
