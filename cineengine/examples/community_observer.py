@@ -19,6 +19,7 @@ from cineengine.generator import FX
 from character import character
 from make_music import SR, midi, piano, pad, reverb, add, write_wav
 from ep3_part1 import wind_gust, owl, crickets, step_note, walk_notes
+import title_card as tc
 
 W, H = 1080, 1920
 FPS = 24
@@ -101,10 +102,10 @@ TEXT = [
     (8.6, 14.2, "the keeper walked,\ncarrying his.", FS, 0.13),
     (16.4, 22.2, "then he found one\nwhose light was fading.", FS, 0.13),
     (23.8, 30.0, "he offered his note.\nbut they did not agree.", FS, 0.13),
-    (31.4, 37.6, "he could not help them\nby being himself alone.", FS, 0.13),
-    (38.6, 45.4, "so he went to find\nthe note between —\na flat. an outsider.", FS, 0.12),
-    (47.0, 54.2, "and the note that belonged nowhere\nwas the one\nthat held them.", FS, 0.12),
-    (55.0, 58.0, "the observer world · i", FSM, 0.90),
+    (31.2, 34.6, "he could not help them\nby being himself alone.", FS, 0.13),
+    (40.2, 46.2, "so he went to find\nthe note between —\na flat. an outsider.", FS, 0.12),
+    (47.4, 54.2, "and the note that belonged nowhere\nwas the one\nthat held them.", FS, 0.12),
+    (55.0, 58.0, "the more you know,\nthe more you observe.", FSM, 0.90),
 ]
 
 
@@ -223,6 +224,11 @@ def render(t):
                 col = (170, 150, 120, int(180 * fade)) if f is FSM else (234, 231, 224, int(236 * fade))
                 d.text(((W - (bb[2] - bb[0])) // 2, yy), ln, font=f, fill=col)
                 yy += int((bb[3] - bb[1]) * 1.5)
+
+    # THE OBSERVER'S QUESTION — the audience predicts the bridge before he finds it
+    tc.quiz_overlay(im, t, "two notes that will not agree —\nwhat completes them?",
+                    35.4, 39.8, options=["a louder note", "the note between", "neither of them"],
+                    y=0.28)
 
     frame = np.asarray(im, np.float32)
     frame = fx.bloom(frame, sigma=8, thr=205, gain=0.7)
