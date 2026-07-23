@@ -130,16 +130,13 @@ def render(t):
 
 
 # =================== the soundscape (environment as music) ===================
-def air(dur, amp=0.05, seed=1):
-    """Wind that hums the tonic — filtered noise + a soft low F drone."""
-    n = int(dur * SR); t = np.arange(n) / SR
+def wind_gust(dur=6.0, amp=0.05, seed=1):
+    """A single soft gust that rises and fades — NOT continuous, leaves silence."""
+    n = int(dur * SR)
     r = np.random.default_rng(seed)
-    nse = np.convolve(r.standard_normal(n).astype(np.float32), np.ones(520) / 520, mode="same")
-    gust = 0.55 + 0.45 * np.sin(2 * np.pi * 0.055 * t + 1) * np.sin(2 * np.pi * 0.018 * t)
-    wind = nse * gust
-    drone = (0.5 * np.sin(2 * np.pi * midi(41) * t) + 0.3 * np.sin(2 * np.pi * midi(29) * t))
-    drone *= (0.5 + 0.5 * np.sin(2 * np.pi * 0.04 * t + seed))
-    return (wind * amp + drone * amp * 0.45).astype(np.float32)
+    nse = np.convolve(r.standard_normal(n).astype(np.float32), np.ones(560) / 560, mode="same")
+    env = np.sin(np.linspace(0, np.pi, n)) ** 1.6
+    return (nse * env * amp).astype(np.float32)
 
 
 def crickets(dur, amp=0.014, seed=3):
@@ -179,29 +176,29 @@ def build_audio():
     L = np.zeros(n, np.float32); R = np.zeros(n, np.float32)
     def st(sig, at, pan): add(L, sig * (1 - pan), at); add(R, sig * pan, at)
 
-    # air fades in from near-silence (the wind arriving)
-    aL = air(DUR, 0.055, 1); aR = air(DUR, 0.055, 2)
-    fadein = np.clip(np.arange(n) / SR / 4.0, 0, 1)      # 4s fade-in
-    L += aL * fadein; R += aR * fadein
-    # night crickets, low, entering after the hook
-    cin = np.clip((np.arange(n) / SR - 8) / 4.0, 0, 1)
-    L += crickets(DUR, 0.013, 3) * cin; R += crickets(DUR, 0.012, 4) * cin
-    # owl calls (chord tones), distant
-    st(owl(0.07, 48), 11.5, 0.3)     # C
-    st(owl(0.06, 53), 30.0, 0.7)     # F
-    st(owl(0.05, 45), 37.5, 0.4)     # A
-    # a couple of very soft grass shifts as it turns / settles
-    st(grass_step(), 6.3, 0.5); st(grass_step(0.022), 6.9, 0.52); st(grass_step(0.02), 16.5, 0.48)
+    # WIND as gentle gusts with quiet space between (never a continuous wall)
+    for at, am, sd, pan in [(1.0, 0.05, 1, 0.4), (11.0, 0.045, 3, 0.6),
+                            (22.0, 0.04, 5, 0.45), (33.0, 0.045, 7, 0.55)]:
+        st(wind_gust(7.0, am, sd), at, pan)
+    # a faint patch of crickets in the middle only (fades in and back out) — not constant
+    cp = crickets(14.0, 0.008, 3)
+    ce = np.sin(np.linspace(0, np.pi, len(cp))) ** 1.2
+    st(cp * ce, 19.0, 0.5)
+    # owl (chord tones), distant, occasional
+    st(owl(0.06, 48), 12.5, 0.3)     # C
+    st(owl(0.05, 53), 35.0, 0.7)     # F
+    # one or two whisper-soft grass shifts as it turns
+    st(grass_step(0.024), 6.4, 0.5); st(grass_step(0.018), 16.6, 0.48)
 
-    # whispers of piano — sparse, warm, in F, blending with the drone
-    st(piano(midi(53), 5.0, amp=0.15), 6.4, 0.5)     # F when it turns to you
-    st(piano(midi(57), 4.0, amp=0.10), 11.0, 0.4)    # A
-    st(piano(midi(60), 5.0, amp=0.12), 23.0, 0.5)    # C on the in-breath
-    st(piano(midi(53), 5.5, amp=0.13), 27.6, 0.5)    # back to F on the out-breath
-    st(piano(midi(57), 4.5, amp=0.10), 33.0, 0.6)    # A
-    st(piano(midi(53), 6.0, amp=0.14), 39.0, 0.5)    # settle on F
-    # soft pad only under the breath (a held F chord) so it 'blooms' with the breath
-    p = pad([midi(53), midi(57), midi(60)], 10.0, amp=0.07)
+    # PIANO — slow, calm, quarter-note pace (long notes, lots of space)
+    st(piano(midi(53), 6.0, amp=0.15), 6.4, 0.5)     # F, when it turns to you
+    st(piano(midi(57), 5.0, amp=0.10), 12.0, 0.42)   # A
+    # the breath: one calm note in, one calm note out (light does the rest)
+    st(piano(midi(60), 6.0, amp=0.12), 23.0, 0.5)    # C — in
+    st(piano(midi(53), 6.5, amp=0.13), 27.6, 0.5)    # F — out
+    st(piano(midi(53), 7.0, amp=0.13), 39.0, 0.5)    # settle on F
+    # a soft F pad that simply swells under the breath, then releases
+    p = pad([midi(53), midi(57), midi(60)], 9.0, amp=0.06)
     add(L, p, 22.5); add(R, np.roll(p, 400), 22.5)
 
     L = reverb(L); R = reverb(R)
