@@ -12,7 +12,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from cineengine.generator import FX
 from character import character
 from make_music import SR, midi, piano, pad, reverb, add, write_wav
-from ep3_part1 import wind_gust, owl, crickets, grass_step, step_note, walk_notes
+from ep3_part1 import wind_gust, owl, crickets, grass_step, step_note, walk_notes, poem_sway
 
 W, H = 1080, 1920
 FPS = 24
@@ -89,6 +89,7 @@ TEXT = [
     (35.1, 40.2, "because it was grassy\nand wanted wear;", FS, 0.13),
     (41.0, 45.5, "the road not taken · i", FSM, 0.90),
 ]
+HITS = [2.0, 7.1, 12.5, 18.0, 23.7, 29.6, 35.1]   # line onsets the keeper rocks to
 
 
 def draw_road(a, pts, bright, t, lit_frac=0.0):
@@ -126,7 +127,10 @@ def render(t):
     ksz = int(lerp(150, 112, walk))
     pose = "walk" if (t < 6 or t > 35) else "front"
     face = -1 if t > 29 else 1
-    spr, fy, odx, ody = character(ksz, pose, t, face)
+    # rock/swing with the weight of the verse; lean toward the road being looked
+    # at, then lean left as he commits to the chosen path
+    lean = poem_sway(t, HITS, bias=0.06 * look_r - 0.07 * chose_l)
+    spr, fy, odx, ody = character(ksz, pose, t, face, lean=lean)
     ox = kx + odx; oy = ky + ody
     glow(a, ox, oy, 26, [255, 200, 130], 0.9 * (0.92 + 0.08 * math.sin(t * 3)))
 

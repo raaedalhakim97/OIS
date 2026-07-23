@@ -12,7 +12,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from cineengine.generator import FX
 from character import character
 from make_music import SR, midi, piano, pad, reverb, add, write_wav
-from ep3_part1 import wind_gust, owl, crickets, grass_step, step_note, walk_notes
+from ep3_part1 import wind_gust, owl, crickets, grass_step, step_note, walk_notes, poem_sway
 from ep4_part1 import leaf_rustle, bez
 
 W, H = 1080, 1920
@@ -86,6 +86,7 @@ TEXT = [
     (33.0, 39.5, "some doors close\nsoftly behind you.", FS, 0.12),
     (40.2, 43.5, "the road not taken · ii", FSM, 0.90),
 ]
+HITS = [2.0, 7.7, 13.8, 20.0, 26.2, 33.0]   # line onsets the keeper rocks to
 
 
 def draw_road(a, pts, bright, t, glint=1.0):
@@ -122,7 +123,9 @@ def render(t):
     looking = 20 <= t <= 30
     face = 1 if looking else -1                            # turn back to the fork, then forward
     pose = "front" if looking else "walk"
-    spr, fy, odx, ody = character(ksz, pose, t, face)
+    # rock with the verse; lean back toward the fork on the glance, forward as he walks on
+    lean = poem_sway(t, HITS, bias=0.07 * glance - 0.04 * (1 - glance) * walk)
+    spr, fy, odx, ody = character(ksz, pose, t, face, lean=lean)
     ox = kx + odx; oy = ky + ody
     glow(a, ox, oy, 24, [255, 200, 130], 0.9 * (0.92 + 0.08 * math.sin(t * 3)))
 

@@ -12,7 +12,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from cineengine.generator import FX
 from character import character
 from make_music import SR, midi, piano, pad, bass, reverb, add, write_wav
-from ep3_part1 import wind_gust, owl, crickets, grass_step, step_note, walk_notes
+from ep3_part1 import wind_gust, owl, crickets, grass_step, step_note, walk_notes, poem_sway
 from ep4_part1 import leaf_rustle, bez
 
 W, H = 1080, 1920
@@ -86,6 +86,7 @@ TEXT = [
     (35.6, 40.0, "the more you know,\nthe more you observe.", FS, 0.12),
     (41.2, 45.6, "the road not taken · iii", FSM, 0.90),
 ]
+HITS = [2.0, 8.0, 14.2, 20.4, 27.4, 35.6]   # line onsets the keeper rocks to
 
 
 def road_pt(u):
@@ -127,7 +128,9 @@ def render(t):
     # keeper stands near the crest of the walked road, then lifts the light forward
     kx, ky, ksz = 0.52 * W, 0.52 * H, 118
     pose = "front" if t < 33 else "lift"
-    spr, fy, odx, ody = character(ksz, pose, t, 1, lift=lift)
+    # rock with the verse; as he lifts the light the sway settles and leans into it
+    lean = poem_sway(t, HITS, bias=0.05 * lift) * (1 - 0.5 * lift)
+    spr, fy, odx, ody = character(ksz, pose, t, 1, lift=lift, lean=lean)
     ox = kx + odx; oy = ky + ody
     glow(a, ox, oy, 26 + 8 * lift, [255, 200, 130], 0.95 * (0.92 + 0.08 * math.sin(t * 3)))
 

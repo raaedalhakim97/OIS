@@ -217,6 +217,19 @@ def walk_notes(st, times, notes, amp=0.15, sway=0.14, base_pan=0.5):
         st(step_note(m, amp, seed=i * 7 + 1), at, max(0.05, min(0.95, pan)))
 
 
+def poem_sway(t, hits, base=0.06, hit=0.11, period=4.4, bias=0.0):
+    # The keeper rocks with the WEIGHT of the verse: a slow continuous pendulum
+    # (one gentle swing per line) plus a soft directional 'nod' into each spoken
+    # line, alternating side to side. Returns a `lean` for character(). `bias`
+    # adds a steady tilt (e.g. lean toward a road being looked at).
+    s = base * math.sin(2 * math.pi * t / period) + bias
+    for i, start in enumerate(hits):
+        d = 1.0 if i % 2 == 0 else -1.0
+        # anticipation + settle: swing out on the line, ease back after (weighted)
+        s += d * hit * math.exp(-((t - (start + 0.4)) / 1.1) ** 2)
+    return s
+
+
 def build_audio():
     n = int(DUR * SR)
     L = np.zeros(n, np.float32); R = np.zeros(n, np.float32)
