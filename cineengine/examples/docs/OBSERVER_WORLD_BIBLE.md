@@ -204,9 +204,13 @@ Every episode must meet these. They are what make separate videos feel like one 
 ### 16. Format
 - **Aspect / size:** vertical **1080 × 1920**.
 - **Frame rate:** 24 fps.
-- **Length:** **45–60s** (hook-driven; a full minute max). Chapters may run as multi-part
-  sets of 3.
-- **Encode:** H.264, yuv420p, CRF ~19, `+faststart`, AAC 192k audio. Keep files < ~25 MB.
+- **Length:** **~2 minutes** per episode (standard from Ep. 2 on), told at a breathing
+  pace. Short interludes may still run 45–60s. Always hook in the first seconds.
+- **Encode:** H.264, yuv420p, `+faststart`, AAC audio. **Keep files < 30 MiB** (the
+  upload limit): CRF ~19 for ≤1-min pieces, **CRF ~27 for 2-min pieces** (the dark content
+  compresses cleanly). Re-encode down if a file exceeds 30 MiB.
+- **Every episode opens with the title card** (`title_card.py`): *Chapter · Episode № ·
+  Title · Land* — a lantern breathing in the dark (~5–6s), then the story.
 
 ### 17. Visual language
 - **Silhouettes:** all characters are near-black (INK 5,6,11) cloaked light-carriers.
@@ -217,8 +221,11 @@ Every episode must meet these. They are what make separate videos feel like one 
 - **Grounds/palettes:** night field (indigo → deep blue, grass, stars) is the default
   world. Warm autumn "wood" (dusk browns) for journey/memory episodes. Always dark, always
   calm. The dark is the Silence — keep lots of it (negative space).
-- **Composition:** characters **small in the frame** (humility, vastness); text in the
-  **upper third**; generous emptiness; the eye rests on the light.
+- **Composition:** characters **small in the frame** (humility, vastness); generous
+  emptiness; the eye rests on the light.
+- **Captions are CENTERED** (vertical middle of frame), so the viewer's eyes never move —
+  they read and watch in one gaze. (Standard from Ep. 2 on. The Observer's Question and
+  end signature may sit slightly higher to clear the characters.)
 - **Typography:** serif (DejaVu Serif), **lowercase**, centered, quiet; generous line
   spacing; end-card small and dim (the channel line).
 - **FX (gentle only):** bloom (thr ~205, soft gain), vignette (~0.4), fine film grain
@@ -235,6 +242,10 @@ Every episode must meet these. They are what make separate videos feel like one 
   consonant, **jittery/broken** when dissonant.
 - **Blooming:** a completed soul's light *grows and warms* on resolution (the payoff
   image).
+- **The note-glyph:** when a soul sounds its note, a small music symbol (♪ / ♫, warm
+  gold) **rises above its head and fades** — a light, legible cue for who is "speaking,"
+  and the music vibe made visible. The speaker's orb also pulses brighter on its line.
+  (Standard from Ep. 2 on.)
 
 ### 19. Audio language
 - **Key:** F major, warm, calm. Procedural synthesis only (numpy) — no samples, no AI.
