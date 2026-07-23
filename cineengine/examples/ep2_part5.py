@@ -19,7 +19,7 @@ FPS = 24
 DUR = 60.0
 GROUND = 0.80 * H
 fx = FX(W, H)
-CHILD_X = 0.42
+CHILD_X = 0.58                       # child on the right; old keeper faces them
 LOW_Y = GROUND - 0.13 * H
 HIGH_Y = GROUND - 0.13 * H - 0.16 * H
 
@@ -31,16 +31,17 @@ def smooth(a, b, x):
 
 # ---- shared movement trajectories (drive BOTH picture and the light's voice) ----
 def x_old(t):
-    if t < 16: return 0.30
-    if t < 26: return lerp(0.30, 0.50, smooth(16, 26, t))
-    if t < 50: return 0.50
-    return lerp(0.50, 0.92, smooth(50, 60, t))
+    if t < 16: return 0.25
+    if t < 26: return lerp(0.25, 0.42, smooth(16, 26, t))   # walk toward the child
+    if t < 50: return 0.42                                   # stop, face them, give
+    return lerp(0.42, 0.08, smooth(50, 60, t))               # turn, walk away into the dark
 
 def orb_x(t):
-    ohx = x_old(t) * W + 42
+    ohx = x_old(t) * W + 40          # old faces right -> hand on the child's side
+    chx = CHILD_X * W - 34           # child faces left -> hand on the old keeper's side
     if t < 28: return ohx
-    if t < 38: return lerp(x_old(28) * W + 42, CHILD_X * W + 26, smooth(28, 38, t))
-    return CHILD_X * W + 22
+    if t < 38: return lerp(x_old(28) * W + 40, chx, smooth(28, 38, t))
+    return chx
 
 def orb_y(t):
     if t < 38: return LOW_Y
@@ -111,10 +112,11 @@ def render(t):
     tw = 0.5 + 0.5 * np.sin(t * 2 + STARPH)
     a[STARY, STARX] += (STARB * tw * star_amt)[:, None] * np.array([215, 218, 236])
 
-    # old keeper — walks to the child, gives, then walks away & fades
+    # old keeper — walks to the child, FACES them to give, then turns away & fades
     oldx = x_old(t) * W
     old_pose = "walk" if (16 < t < 26 or t > 50) else "stand"
-    ospr, ofy, oodx, oody = character(150, old_pose, t, 1, lift=0.0)
+    old_face = 1 if t < 49.5 else -1           # face the child while giving; face away to leave
+    ospr, ofy, oodx, oody = character(150, old_pose, t, old_face, lift=0.0)
     old_alpha = 1 - smooth(50.5, 60, t)
 
     # child — appears, receives, lifts it awake
@@ -167,17 +169,49 @@ def render(t):
     return frame.clip(0, 255).astype(np.uint8)
 
 
-# ---- audio: light-voice (movement) + hand-over call&response + warm resolve ----
-def footstep(amp=0.11, dur=0.16):
+# ---- audio: light-voice + hand-over piano + soft grass steps + wind + owl ----
+def grass_step(amp=0.07, dur=0.24):
+    """A soft footstep on grass — filtered noise rustle, no hard thud."""
     n = int(dur * SR); t = np.arange(n) / SR
-    return ((np.sin(2 * np.pi * 60 * t) * np.exp(-t * 32)
-             + np.random.randn(n).astype(np.float32) * np.exp(-t * 70) * 0.4) * amp)
+    nse = np.convolve(np.random.randn(n).astype(np.float32), np.ones(22) / 22, mode="same")
+    rustle = np.random.randn(n).astype(np.float32) * np.exp(-t * 45) * 0.35
+    env = np.exp(-t * 15) * np.clip(t / 0.008, 0, 1)
+    return (nse * env + rustle * env) * amp
+
+
+def wind_bed(dur, amp=0.05, seed=0):
+    """Soft, gusting wind (heavily low-passed noise)."""
+    n = int(dur * SR)
+    r = np.random.default_rng(seed)
+    nse = np.convolve(r.standard_normal(n).astype(np.float32), np.ones(500) / 500, mode="same")
+    t = np.arange(n) / SR
+    gust = 0.55 + 0.45 * np.sin(2 * np.pi * 0.06 * t + 1) * np.sin(2 * np.pi * 0.017 * t)
+    return nse * gust * amp
+
+
+def owl(amp=0.09):
+    """A soft, nostalgic owl call: 'hoo ... hoo-hoo'."""
+    seg = np.zeros(int(1.6 * SR), np.float32)
+    for f0, start in [(300, 0.0), (285, 0.62), (300, 0.92)]:
+        n = int(0.4 * SR); t = np.arange(n) / SR
+        f = f0 * (1 - 0.05 * t / 0.4)
+        ph = 2 * np.pi * np.cumsum(f) / SR
+        y = np.sin(ph) * 0.7 + 0.15 * np.sin(2 * ph)
+        env = np.sin(np.clip(t / 0.4, 0, 1) * np.pi) ** 1.4
+        s = int(start * SR); seg[s:s + n] += y * env
+    return seg * amp
 
 
 def build_audio():
     n = int(DUR * SR)
     L = np.zeros(n, np.float32); R = np.zeros(n, np.float32)
     def st(sig, at, pan): add(L, sig * (1 - pan), at); add(R, sig * pan, at)
+
+    # ambient: soft gusting wind (stereo) across the whole minute
+    add(L, wind_bed(DUR, 0.05, seed=1), 0.0)
+    add(R, wind_bed(DUR, 0.05, seed=2), 0.0)
+    # a nostalgic owl, a few soft calls in the distance
+    st(owl(0.09), 6.0, 0.30); st(owl(0.075), 23.5, 0.72); st(owl(0.08), 47.5, 0.4)
 
     # the LIGHT'S VOICE: pitch tracks its height, amp tracks its movement + how
     # awake it is; it swells and climbs in pitch as it reignites.
@@ -206,11 +240,11 @@ def build_audio():
         add(L, bass(midi(br), step + 0.2, amp=0.10), k * step)
         add(R, bass(midi(br), step + 0.2, amp=0.10), k * step)
 
-    # footsteps: walking to the child, and walking away
+    # soft grass footsteps: walking toward the child, and away into the dark
     tt = 16.0
-    while tt < 25.5: st(footstep(), tt, 0.5); tt += 0.7
+    while tt < 25.5: st(grass_step(), tt, 0.46); tt += 0.72
     tt = 51.0
-    while tt < 59: st(footstep(amp=0.09 * (1 - (tt - 51) / 9)), tt, 0.6); tt += 0.7
+    while tt < 59: st(grass_step(amp=0.06 * (1 - (tt - 51) / 9)), tt, 0.36); tt += 0.72
 
     # THE HAND-OVER (warm, low): old voice descends & fades (right), the child's
     # voice rises & resolves home (left) — mirror of part 1.
