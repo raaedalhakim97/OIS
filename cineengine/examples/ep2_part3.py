@@ -77,6 +77,15 @@ STARB = _r.uniform(0.3, 1.0, 160); STARPH = _r.uniform(0, 6.28, 160)
 OSPR = [character(sz, "stand", 0.0, 1 if ox < 0.5 else -1, 0.0)
         for (ox, oy, sz, m, ct) in OTHERS]
 
+# THE LIGHT-GRAPH finale: the lit lights connect and 'speak' in single notes,
+# each edge a step up an F-major scale (their language). node 0 = keeper.
+NODE_X = [0.5] + [o[0] for o in OTHERS]
+_pairs = [(0, 1), (0, 2), (0, 3), (0, 4), (0, 5), (0, 6),
+          (1, 3), (3, 5), (5, 2), (2, 4), (4, 6), (6, 1)]
+_scale = [65, 67, 69, 70, 72, 74, 76, 77, 79, 81, 83, 84]   # F G A Bb C D E F G A B C
+GRAPH_T0 = 48.0
+EDGES = [(a, b, GRAPH_T0 + i * 0.8, _scale[i]) for i, (a, b) in enumerate(_pairs)]
+
 NARR = [
     (2.0, 7.0, "the light grew heavy."),
     (7.5, 13.0, "too heavy\nfor one."),
@@ -86,8 +95,8 @@ NARR = [
     (31.5, 37.0, "a spark costs nothing —"),
     (37.5, 43.0, "and gives everything."),
     (43.5, 49.0, "and the weight\ngrew lighter."),
-    (49.5, 55.0, "a light shared\nis never smaller."),
-    (55.0, 60.0, "you were never meant\nto carry it alone."),
+    (48.0, 53.5, "a light shared\nis never smaller."),
+    (54.0, 60.0, "and the lights speak —\nour language of light."),
 ]
 
 
@@ -105,6 +114,7 @@ def render(t):
     kbr = 0.4 + 0.09 * nconn                       # brighter with every shared spark
     glow(a, kox, koy, 30 + 3 * nconn, [255, 198, 120], kbr * (0.9 + 0.1 * math.sin(t * 3)))
 
+    nodepos = [(kox, koy)]                          # node 0 = keeper (for the graph)
     # the others: dim silhouettes that LIGHT UP when the spark reaches them
     others_sprites = []
     for idx, (ox, oy, sz, m, ct) in enumerate(OTHERS):
@@ -119,6 +129,7 @@ def render(t):
             if 0 < rp < 1.0:
                 glow(a, ohx, ohy, 40 + 90 * rp, [255, 205, 150], 0.4 * (1 - rp))
         others_sprites.append((ospr, oxp, oyp, ofy))
+        nodepos.append((ohx, ohy))
         # travelling spark from keeper's light to this one just before it lights
         if ct - 0.55 <= t < ct:
             u = (t - (ct - 0.55)) / 0.55
@@ -129,6 +140,20 @@ def render(t):
     for (ospr, oxp, oyp, ofy) in others_sprites:
         im.paste(ospr, (int(oxp - ospr.size[0] / 2), int(oyp - ofy)), ospr)
     im.paste(kspr, (int(kx - kspr.size[0] / 2), int(GROUND - kfy)), kspr)
+
+    # THE LIGHT-GRAPH: the lit lights connect and speak in notes
+    if t >= GRAPH_T0 - 0.3:
+        gd = ImageDraw.Draw(im, "RGBA")
+        for (ai, bi, et, note) in EDGES:
+            if t < et - 0.3:
+                continue
+            ax, ay = nodepos[ai]; bx, by = nodepos[bi]
+            br = smooth(et - 0.3, et + 0.4, t)
+            gd.line([(ax, ay), (bx, by)], fill=(255, 208, 150, int(110 * br)), width=2)
+            if et <= t <= et + 0.7:                 # a pulse travels the edge (a word)
+                u = (t - et) / 0.7
+                px, py = lerp(ax, bx, u), lerp(ay, by, u)
+                gd.ellipse([px - 9, py - 9, px + 9, py + 9], fill=(255, 235, 190, 230))
 
     d = ImageDraw.Draw(im, "RGBA")
     tfade = smooth(0.4, 1.4, t) * (1 - smooth(11.5, 12.5, t))
@@ -182,10 +207,12 @@ def build_audio():
         st(piano(midi(60 + (m - 65) // 2 if m > 65 else 60), 1.8, amp=0.14), ct - 0.5, 0.5)  # call
         st(piano(midi(m), 7.0, amp=0.22), ct, ox)                                            # response, panned to it
         st(piano(midi(m), 4.5, amp=0.09), ct + 0.6, 1 - ox)                                  # echo across
-    # final: the whole chord rolls once and settles (all lights singing together)
-    for i, m in enumerate([65, 69, 72, 77, 81, 84]):
-        st(piano(midi(m), 5.0, amp=0.12), 52.5 + i * 0.22, 0.2 + i * 0.12)
-    st(piano(midi(53), 5.0, amp=0.16), 56.5, 0.5)     # low F home
+    # THE LIGHT-GRAPH: each edge speaks a single note, stepping up an F scale
+    # (the lights' language). Panned to where the edge lands.
+    for (ai, bi, et, note) in EDGES:
+        st(piano(midi(note), 3.6, amp=0.15), et, NODE_X[bi])
+        st(piano(midi(note), 2.4, amp=0.06), et + 0.4, 1 - NODE_X[bi])   # answer back
+    st(piano(midi(53), 5.5, amp=0.16), 58.6, 0.5)     # low F home, all connected
 
     Lc = reverb(Lc); Rc = reverb(Rc)
     mix = np.tanh(np.stack([Lc, Rc], 1) * 1.2)
