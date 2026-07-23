@@ -1,0 +1,119 @@
+{
+  "name": "Observer World — Pull from GitHub & Upload",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "c2a2e001-0000-4000-8000-000000000001",
+      "name": "Run (manual)",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [-420, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://api.github.com/repos/raaedalhakim97/OIS/contents/cineengine/examples/pipeline/latest.json?ref=claude/extract-create-new-repo-evr0vz",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Accept", "value": "application/vnd.github.raw" }
+          ]
+        },
+        "options": {
+          "response": { "response": { "responseFormat": "json" } }
+        }
+      },
+      "id": "c2a2e002-0000-4000-8000-000000000002",
+      "name": "Get latest.json",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-180, 300]
+    },
+    {
+      "parameters": {
+        "url": "=https://api.github.com/repos/raaedalhakim97/OIS/contents/{{ $json.path }}?ref=claude/extract-create-new-repo-evr0vz",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Accept", "value": "application/vnd.github.raw" }
+          ]
+        },
+        "options": {
+          "response": { "response": { "responseFormat": "file", "outputPropertyName": "data" } }
+        }
+      },
+      "id": "c2a2e003-0000-4000-8000-000000000003",
+      "name": "Download episode .mp4",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [80, 300]
+    },
+    {
+      "parameters": {
+        "name": "={{ $('Get latest.json').item.json.id }}.mp4",
+        "driveId": { "__rl": true, "mode": "list", "value": "My Drive" },
+        "folderId": { "__rl": true, "mode": "list", "value": "root", "cachedResultName": "/ (Root folder)" },
+        "inputDataFieldName": "data",
+        "options": {}
+      },
+      "id": "c2a2e004-0000-4000-8000-000000000004",
+      "name": "Upload to Google Drive",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [340, 300]
+    },
+    {
+      "parameters": {
+        "content": "## Observer World — Pull from GitHub\n\nClaude pushes every episode to the repo **raaedalhakim97/OIS** and keeps a pointer file `pipeline/latest.json` (id, title, land, caption, path). This workflow **pulls** the newest episode from GitHub and uploads it — it runs on YOUR n8n, which can reach GitHub, so the sandbox egress limit never applies.\n\n**Flow**\nRun → Get latest.json → Download the .mp4 (GitHub raw media API) → Upload to Google Drive.\n\n**Setup**\n1. Open **Upload to Google Drive** → attach your Drive credential + pick a folder.\n2. If the repo is **private**, add auth to both HTTP nodes (see the auth note).\n3. Click **Test workflow** to pull the latest episode now.\n4. To automate: replace the Manual trigger with a **Schedule Trigger** (e.g. every 30 min) — a dedupe step can be added to skip already-uploaded ids.",
+        "height": 360,
+        "width": 360,
+        "color": 4
+      },
+      "id": "c2a2e005-0000-4000-8000-000000000005",
+      "name": "README",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-420, -160]
+    },
+    {
+      "parameters": {
+        "content": "## Auth (private repo)\nThe GitHub **raw media API** (`Accept: application/vnd.github.raw`) returns the file bytes directly and handles the slashed branch name via `?ref=`.\n\nIf `raaedalhakim97/OIS` is **private**, add to BOTH HTTP nodes:\n*Authentication → Generic → Header Auth*, credential header\n`Authorization: Bearer <your GitHub token>` (a fine-grained token with **Contents: read**).\nIf the repo is public, no auth is needed.",
+        "height": 260,
+        "width": 360,
+        "color": 3
+      },
+      "id": "c2a2e006-0000-4000-8000-000000000006",
+      "name": "Auth note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [80, -160]
+    },
+    {
+      "parameters": {
+        "content": "## Publish target\nGoogle Drive is the default. To auto-post, add a node after Download using binary field **data**:\n- **YouTube**: `YouTube: Upload` — map `title` + `caption` from `$('Get latest.json').item.json`.\n- **TikTok / Instagram**: HTTP Request to their Content Posting API.\nKeep Drive too if you want a backup copy.",
+        "height": 240,
+        "width": 360,
+        "color": 5
+      },
+      "id": "c2a2e007-0000-4000-8000-000000000007",
+      "name": "Publish note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [340, -160]
+    }
+  ],
+  "connections": {
+    "Run (manual)": {
+      "main": [[{ "node": "Get latest.json", "type": "main", "index": 0 }]]
+    },
+    "Get latest.json": {
+      "main": [[{ "node": "Download episode .mp4", "type": "main", "index": 0 }]]
+    },
+    "Download episode .mp4": {
+      "main": [[{ "node": "Upload to Google Drive", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "pinData": {},
+  "meta": { "instanceId": "observer-world" }
+}
