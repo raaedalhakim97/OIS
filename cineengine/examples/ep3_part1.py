@@ -69,16 +69,19 @@ _r = np.random.default_rng(11)
 STARX = _r.integers(0, W, 150); STARY = _r.integers(0, int(GROUND * 0.9), 150)
 STARB = _r.uniform(0.3, 1.0, 150); STARPH = _r.uniform(0, 6.28, 150)
 
-# (start, end, text, font, y)
+# (start, end, text, font, y)   — refined script: interrupt -> label -> promise
 TEXT = [
-    (2.2, 5.8, "stop scrolling.", FBIG, 0.40),
-    (6.4, 9.6, "yeah — you.", FBIG, 0.40),
-    (10.2, 15.6, "you've been scrolling\na while now.", FS, 0.42),
-    (16.2, 22.2, "it's okay.\nbreathe with me.", FS, 0.42),
+    (2.2, 5.6, "don't scroll past this one.", FBIG, 0.40),
+    (6.2, 9.0, "quick — your shoulders.\ndrop them.", FS, 0.41),
+    (9.2, 10.3, "there.", FBIG, 0.40),
+    (10.6, 13.6, "hey. yeah, you.", FBIG, 0.40),
+    (14.2, 19.0, "give me 40 seconds.\nthat's all.", FS, 0.42),
+    (19.5, 22.6, "you don't have to do anything.\njust watch the light.", FS, 0.42),
     (23.0, 27.0, "in…", FBIG, 0.40),
-    (27.6, 31.6, "…and out.", FBIG, 0.40),
-    (32.4, 38.4, "the world is still here.\nquiet. waiting.", FS, 0.42),
-    (38.8, 42.0, "stay for the next breath.", FSM, 0.44),
+    (27.6, 31.4, "…and out.", FBIG, 0.40),
+    (31.9, 35.4, "feel that?\nthat's you — arriving.", FS, 0.42),
+    (35.9, 39.0, "the world didn't go anywhere.\nyou did.", FS, 0.42),
+    (39.4, 42.0, "stay for the next breath →", FSM, 0.44),
 ]
 
 
@@ -94,7 +97,7 @@ def render(t):
     tw = 0.5 + 0.5 * np.sin(t * 2 + STARPH)
     a[STARY, STARX] += (STARB * tw * (0.4 + 0.4 * smooth(2, 10, t)))[:, None] * np.array([210, 214, 234])
 
-    turned = t >= 6.2
+    turned = t >= 10.5          # turns to face you on "hey. yeah, you."
     pose = "front" if turned else "stand"
     spr, fy, odx, ody = character(150, pose, t, 1)
     kx = CX * W
@@ -188,11 +191,11 @@ def build_audio():
     st(owl(0.06, 48), 12.5, 0.3)     # C
     st(owl(0.05, 53), 35.0, 0.7)     # F
     # one or two whisper-soft grass shifts as it turns
-    st(grass_step(0.024), 6.4, 0.5); st(grass_step(0.018), 16.6, 0.48)
+    st(grass_step(0.024), 10.5, 0.5); st(grass_step(0.018), 19.5, 0.48)
 
     # PIANO — slow, calm, quarter-note pace (long notes, lots of space)
-    st(piano(midi(53), 6.0, amp=0.15), 6.4, 0.5)     # F, when it turns to you
-    st(piano(midi(57), 5.0, amp=0.10), 12.0, 0.42)   # A
+    st(piano(midi(53), 6.0, amp=0.15), 10.6, 0.5)    # F, when it turns to you
+    st(piano(midi(57), 5.0, amp=0.10), 15.0, 0.42)   # A
     # the breath: one calm note in, one calm note out (light does the rest)
     st(piano(midi(60), 6.0, amp=0.12), 23.0, 0.5)    # C — in
     st(piano(midi(53), 6.5, amp=0.13), 27.6, 0.5)    # F — out
