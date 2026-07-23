@@ -15,7 +15,7 @@ from PIL import Image, ImageDraw
 INK = (5, 6, 11)      # near-black so the silhouette reads against dark scenes
 
 
-def character(h, pose="stand", t=0.0, face=1, lift=0.0, lean=0.0):
+def character(h, pose="stand", t=0.0, face=1, lift=0.0, lean=0.0, trail=0.0):
     S = 2
     Cw = int(h * 1.5) * S           # a little wider so a deep lean never clips
     Ch = int(h * 1.3) * S
@@ -61,10 +61,11 @@ def character(h, pose="stand", t=0.0, face=1, lift=0.0, lean=0.0):
         return im, base / S, LX(hand_y) / S, (hand_y - base) / S - 4
 
     nx = cx + LX(neck_y); hx = cx + LX(head_y)
-    # cloak: flared body with a rounded hem (neck leans, hem stays planted)
+    tr = trail * hh                                   # cloak hem drags opposite to motion
+    # cloak: flared body with a rounded hem (neck leans, hem drags with momentum)
     d.polygon([(nx - neckW, neck_y), (nx + neckW, neck_y),
-               (cx + baseW + sway, base), (cx - baseW - sway, base)], fill=col)
-    d.ellipse([cx - baseW - sway, base - 0.10 * hh, cx + baseW + sway, base + 0.06 * hh], fill=col)
+               (cx + baseW + sway + tr, base), (cx - baseW - sway + tr, base)], fill=col)
+    d.ellipse([cx - baseW - sway + tr, base - 0.10 * hh, cx + baseW + sway + tr, base + 0.06 * hh], fill=col)
     # little walk feet peeking under the hem (planted, no lean)
     if pose == "walk":
         a = math.sin(t * 6) * 0.06 * hh
