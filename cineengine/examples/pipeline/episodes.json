@@ -2,10 +2,47 @@
   "repo": "raaedalhakim97/OIS",
   "branch": "claude/extract-create-new-repo-evr0vz",
   "episodes": [
-    {"id":"ch1_prologue","chapter":"I","episode":"0","title":"The Keeper","path":"cineengine/examples/ch1_ep3_the_keeper.mp4"},
-    {"id":"ch1_ep1","chapter":"I","episode":"1","title":"The Note Between","path":"cineengine/examples/ch1_ep1_the_note_between.mp4"},
-    {"id":"ch1_ep2","chapter":"I","episode":"2","title":"The Conversation","path":"cineengine/examples/ch1_ep2_the_conversation.mp4"},
-    {"id":"ch1_ep4","chapter":"I","episode":"4","title":"The Hollow","path":"cineengine/examples/ch1_ep4_the_hollow.mp4"},
-    {"id":"ch1_ep5","chapter":"I","episode":"5","title":"The Home of Five","path":"cineengine/examples/ch1_ep5_the_home_of_five.mp4"}
+    {
+      "id": "ch1_prologue",
+      "chapter": "I",
+      "episode": "0",
+      "title": "The Keeper",
+      "path": "cineengine/examples/ch1_ep3_the_keeper.mp4"
+    },
+    {
+      "id": "ch1_ep1",
+      "chapter": "I",
+      "episode": "1",
+      "title": "The Note Between",
+      "path": "cineengine/examples/ch1_ep1_the_note_between.mp4"
+    },
+    {
+      "id": "ch1_ep2",
+      "chapter": "I",
+      "episode": "2",
+      "title": "The Conversation",
+      "path": "cineengine/examples/ch1_ep2_the_conversation.mp4"
+    },
+    {
+      "id": "ch1_ep4",
+      "chapter": "I",
+      "episode": "4",
+      "title": "The Hollow",
+      "path": "cineengine/examples/ch1_ep4_the_hollow.mp4"
+    },
+    {
+      "id": "ch1_ep5",
+      "chapter": "I",
+      "episode": "5",
+      "title": "The Home of Five",
+      "path": "cineengine/examples/ch1_ep5_the_home_of_five.mp4"
+    },
+    {
+      "id": "ch1_ep6",
+      "chapter": "I",
+      "episode": "6",
+      "title": "The Heartbeat",
+      "path": "cineengine/examples/ch1_ep6_the_heartbeat.mp4"
+    }
   ]
 }
