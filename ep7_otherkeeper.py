@@ -17,7 +17,7 @@ from cineengine.generator import FX
 from character import character
 from make_music import SR, midi, piano, pad, bass, softkick, reverb, master, add, write_wav
 import title_card as tc
-import world, planet as pl
+import world, planet as pl, staff
 
 W, H = 1080, 1920
 FPS = 24
@@ -289,7 +289,12 @@ def story(ts):
     glow(a, mx, my - 0.11 * H, 22, GOLD, 0.9 * (0.9 + 0.1 * math.sin(ts * 3)))
     if seen > 0.02:
         glow(a, ox, oy - 0.11 * H, 21, WARM, seen * 0.85 * (0.9 + 0.1 * math.sin(ts * 3 + 1)))
-    staff_glows(a, ts)
+    vis = smooth(41, 47, ts)
+    modes, glows = [], []
+    for i in range(8):
+        lv, empty = note_light(i, ts)
+        modes.append("empty" if empty else "full"); glows.append(lv)
+    staff.glows_into(a, vis, glows, modes)
 
     im = Image.fromarray(a.clip(0, 255).astype(np.uint8))
     im.paste(mspr, (int(mx - mspr.size[0] / 2), int(my - mfoot)), mspr)
@@ -297,7 +302,7 @@ def story(ts):
         if seen < 0.995:
             al = ospr.getchannel("A").point(lambda v: int(v * seen)); ospr.putalpha(al)
         im.paste(ospr, (int(ox - ospr.size[0] / 2), int(oy - ofoot)), ospr)
-    staff_draw(im, ts)
+    staff.draw(im, vis, modes, glows)
 
     # dialogue glyphs above the two keepers
     if 24 <= ts <= 28: draw_glyph(im, mx, my - 0.16 * H, ts, 25.0)     # the Keeper asks
