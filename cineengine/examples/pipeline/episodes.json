@@ -2,23 +2,10 @@
   "repo": "raaedalhakim97/OIS",
   "branch": "claude/extract-create-new-repo-evr0vz",
   "episodes": [
-    {
-      "id": "ch1_ep1",
-      "chapter": "I",
-      "episode": "1",
-      "title": "The Note Between",
-      "land": "the Home Fields",
-      "caption": "THE OBSERVER WORLD — Chapter I, Episode 1: The Note Between. A keeper finds a fading light whose note clashes with his; he goes to find the note between — a flat, an outsider — and it holds them together.  the more you know, the more you observe.",
-      "path": "cineengine/examples/ch1_ep1_the_note_between.mp4"
-    },
-    {
-      "id": "ch1_ep2",
-      "chapter": "I",
-      "episode": "2",
-      "title": "The Conversation",
-      "land": "the Home Fields",
-      "caption": "THE OBSERVER WORLD — Chapter I, Episode 2: The Conversation. Two notes meet and speak in their notes. When they sing together, the world remembers it was once a song — and the Silence loses one step of ground.  the more you know, the more you observe.",
-      "path": "cineengine/examples/ch1_ep2_the_conversation.mp4"
-    }
+    {"id":"ch1_prologue","chapter":"I","episode":"0","title":"The Keeper","path":"cineengine/examples/ch1_ep3_the_keeper.mp4"},
+    {"id":"ch1_ep1","chapter":"I","episode":"1","title":"The Note Between","path":"cineengine/examples/ch1_ep1_the_note_between.mp4"},
+    {"id":"ch1_ep2","chapter":"I","episode":"2","title":"The Conversation","path":"cineengine/examples/ch1_ep2_the_conversation.mp4"},
+    {"id":"ch1_ep4","chapter":"I","episode":"4","title":"The Hollow","path":"cineengine/examples/ch1_ep4_the_hollow.mp4"},
+    {"id":"ch1_ep5","chapter":"I","episode":"5","title":"The Home of Five","path":"cineengine/examples/ch1_ep5_the_home_of_five.mp4"}
   ]
 }
