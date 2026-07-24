@@ -56,6 +56,66 @@ def bass(freq, dur, amp=0.20):
     return (y * e * amp).astype(np.float32)
 
 
+def violin(freq, dur, amp=0.18, vib=1.0, tremolo=0.0):
+    """An actually-bowed string (not an organ). What makes it read as a violin:
+    bow-grip at the attack, vibrato that FADES IN after the onset, bow-hair noise,
+    amplitude shimmer from the bow, and a body/formant resonance. THREAT voice —
+    high & trembling for danger; the same voice on chord tones = threat reconciled."""
+    n = int(dur * SR); t = np.arange(n) / SR
+    # vibrato: absent at first, blooms after ~0.2s, slightly irregular (human)
+    vdepth = 0.011 * vib * np.clip((t - 0.18) / 0.45, 0, 1)
+    virr = 1.0 + 0.18 * np.sin(2 * np.pi * 0.7 * t + 1.3)
+    vibrato = 1.0 + vdepth * np.sin(2 * np.pi * 5.6 * virr * t)
+    ph = 2 * np.pi * freq * np.cumsum(vibrato) / SR
+    y = np.zeros(n, np.float32)
+    for k in range(1, 15):                        # bright sawtooth = bowed string
+        y += (1.0 / k) * np.sin(k * ph)
+    y /= 3.0
+    # body/formant: emphasise a bright band (~the violin's presence) by adding a
+    # band-passed copy (smoothed twice, then differenced = crude resonant band)
+    lp = np.convolve(y, np.ones(6) / 6, "same")
+    band = y - np.convolve(lp, np.ones(24) / 24, "same")
+    y = y * 0.7 + band * 0.6
+    # bow-hair noise, shaped by the note (breathy friction, not a pure tone)
+    hiss = np.convolve(np.random.randn(n).astype(np.float32), np.ones(6) / 6, "same")
+    hiss = hiss - np.convolve(hiss, np.ones(40) / 40, "same")            # high-passed air
+    # bow GRIP at the attack: a short noisy scratch
+    grip = np.convolve(np.random.randn(n).astype(np.float32), np.ones(4) / 4, "same") * np.exp(-t * 45)
+    # amplitude shimmer (bow pressure wobble) so it isn't a steady organ tone
+    shimmer = 1.0 + 0.09 * np.convolve(np.random.randn(n).astype(np.float32), np.ones(120) / 120, "same")
+    atk, rel = int(0.09 * SR), int(0.4 * SR)      # bow grip is quicker than an organ swell
+    e = np.ones(n, np.float32) * 0.85
+    e[:atk] = np.linspace(0, 1, atk) ** 0.7
+    if rel < n: e[-rel:] = np.linspace(0.85, 0, rel)
+    if tremolo > 0:
+        e = e * (1 - tremolo * 0.45 * (0.5 + 0.5 * np.sin(2 * np.pi * 6.5 * t)))
+    sig = (y * shimmer + hiss * 0.05 + grip * 0.18) * e
+    return (sig * amp).astype(np.float32)
+
+
+def heartbeat(amp=0.16):
+    """A soft, warm 'lub-dub' — the breathing pulse that replaces any hard beat.
+    Round, low, heavily softened; sparse by design. Never a clicky kick."""
+    def thump(f0, a, dur=0.34):
+        m = int(dur * SR); t = np.arange(m) / SR
+        f = f0 * np.exp(-t * 15) + 36
+        y = np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-t * 8) * a
+        return np.convolve(y, np.ones(60) / 60, "same").astype(np.float32)   # lowpass = soft
+    out = np.zeros(int(0.62 * SR), np.float32)
+    lub = thump(96, 1.0); dub = thump(78, 0.7)
+    out[:len(lub)] += lub
+    o = int(0.26 * SR); out[o:o + len(dub)] += dub[:len(out) - o]
+    out /= (np.max(np.abs(out)) + 1e-9)
+    return (out * amp).astype(np.float32)
+
+
+def brush(amp=0.06, dur=0.18):
+    """A soft brushed shaker — airy, high-quality, barely there."""
+    m = int(dur * SR); t = np.arange(m) / SR
+    nz = np.convolve(np.random.randn(m).astype(np.float32), np.ones(8) / 8, "same")
+    return (nz * (np.clip(t / 0.02, 0, 1) * np.exp(-t * 16)) * amp).astype(np.float32)
+
+
 def reverb(x):
     """Smooth, dense taps (no metallic comb)."""
     out = x.copy()
