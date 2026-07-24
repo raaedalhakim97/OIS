@@ -6,6 +6,7 @@ Key: F major (consonant, calm). No samples, no AI: pure numpy synthesis.
 """
 import os, sys, argparse, wave
 import numpy as np
+from scipy.signal import iirpeak, butter, lfilter
 
 SR = 44100
 
@@ -15,16 +16,19 @@ def midi(m):
 
 
 def piano(freq, dur, amp=0.26):
-    """Clean, mellow piano-ish tone (in-phase harmonics, smooth decay)."""
-    n = int(dur * SR)
-    t = np.arange(n) / SR
-    y = (np.sin(2 * np.pi * freq * t)
-         + 0.5 * np.sin(2 * np.pi * 2 * freq * t)
-         + 0.22 * np.sin(2 * np.pi * 3 * freq * t)
-         + 0.10 * np.sin(2 * np.pi * 4 * freq * t))
-    decay = np.exp(-t * 3.0)
-    atk = np.clip(t / 0.006, 0, 1)
-    return (y * decay * atk * amp).astype(np.float32)
+    """A warm FELT piano — string inharmonicity, per-partial decay (highs die first),
+    a soft hammer transient, and a felt-muted top. Reads as a real, tender piano."""
+    n = int(dur * SR); t = np.arange(n) / SR
+    B = 0.00042                                          # string inharmonicity
+    y = np.zeros(n, np.float32)
+    for k, ka in ((1, 1.0), (2, 0.42), (3, 0.20), (4, 0.11), (5, 0.06), (6, 0.035)):
+        fk = k * freq * np.sqrt(1.0 + B * k * k)
+        y += ka * np.sin(2 * np.pi * fk * t) * np.exp(-t * (1.9 + 0.55 * k))   # higher partials fade faster
+    y += 0.35 * np.sin(2 * np.pi * freq * t) * np.exp(-t * 0.8)                # long fundamental tail
+    hammer = np.random.randn(n).astype(np.float32) * np.exp(-t * 150) * 0.05   # soft felt hammer
+    atk = np.clip(t / 0.005, 0, 1) ** 0.8
+    y = (y * 0.85 + hammer) * atk * amp
+    return np.convolve(y, np.ones(3) / 3, "same").astype(np.float32)           # felt = softened highs
 
 
 def pad(freqs, dur, amp=0.12):
@@ -56,41 +60,52 @@ def bass(freq, dur, amp=0.20):
     return (y * e * amp).astype(np.float32)
 
 
-def violin(freq, dur, amp=0.18, vib=1.0, tremolo=0.0):
-    """An actually-bowed string (not an organ). What makes it read as a violin:
-    bow-grip at the attack, vibrato that FADES IN after the onset, bow-hair noise,
-    amplitude shimmer from the bow, and a body/formant resonance. THREAT voice —
-    high & trembling for danger; the same voice on chord tones = threat reconciled."""
+def _violin_body(x):
+    """A real violin-body resonance: a bank of scipy resonant peaks (formants) that
+    give the woody/nasal string colour synthesis can't fake with harmonics alone."""
+    out = np.zeros_like(x)
+    for fc, Q, g in [(280, 2.5, 1.0), (460, 3, 0.9), (820, 4, 0.7),
+                     (1300, 5, 0.55), (2400, 7, 0.7), (3200, 9, 0.5)]:
+        b, a = iirpeak(fc / (SR / 2), Q)
+        out += g * lfilter(b, a, x)
+    return out
+
+
+def violin(freq, dur, amp=0.16, vib=1.0, tremolo=0.0):
+    """Bowed string = a band-limited sawtooth (physically the string's bridge motion) +
+    bow-hair noise, run through a real violin-body formant filter bank (scipy). Pitch
+    jitter + fade-in vibrato keep it from sounding like an organ. High & trembling =
+    the threat; on chord tones = the threat reconciled."""
+    freq = max(20.0, float(freq))
     n = int(dur * SR); t = np.arange(n) / SR
-    # vibrato: absent at first, blooms after ~0.2s, slightly irregular (human)
-    vdepth = 0.011 * vib * np.clip((t - 0.18) / 0.45, 0, 1)
-    virr = 1.0 + 0.18 * np.sin(2 * np.pi * 0.7 * t + 1.3)
-    vibrato = 1.0 + vdepth * np.sin(2 * np.pi * 5.6 * virr * t)
-    ph = 2 * np.pi * freq * np.cumsum(vibrato) / SR
-    y = np.zeros(n, np.float32)
-    for k in range(1, 15):                        # bright sawtooth = bowed string
-        y += (1.0 / k) * np.sin(k * ph)
-    y /= 3.0
-    # body/formant: emphasise a bright band (~the violin's presence) by adding a
-    # band-passed copy (smoothed twice, then differenced = crude resonant band)
-    lp = np.convolve(y, np.ones(6) / 6, "same")
-    band = y - np.convolve(lp, np.ones(24) / 24, "same")
-    y = y * 0.7 + band * 0.6
-    # bow-hair noise, shaped by the note (breathy friction, not a pure tone)
-    hiss = np.convolve(np.random.randn(n).astype(np.float32), np.ones(6) / 6, "same")
-    hiss = hiss - np.convolve(hiss, np.ones(40) / 40, "same")            # high-passed air
-    # bow GRIP at the attack: a short noisy scratch
-    grip = np.convolve(np.random.randn(n).astype(np.float32), np.ones(4) / 4, "same") * np.exp(-t * 45)
-    # amplitude shimmer (bow pressure wobble) so it isn't a steady organ tone
-    shimmer = 1.0 + 0.09 * np.convolve(np.random.randn(n).astype(np.float32), np.ones(120) / 120, "same")
-    atk, rel = int(0.09 * SR), int(0.4 * SR)      # bow grip is quicker than an organ swell
+    rng = np.random.default_rng(int(freq * 7) % 99991)
+    vd = 0.009 * vib * np.clip((t - 0.12) / 0.35, 0, 1)
+    jit = 0.0013 * np.convolve(rng.standard_normal(n).astype(np.float32), np.ones(40) / 40, "same")
+    ph = 2 * np.pi * freq * np.cumsum(1 + vd * np.sin(2 * np.pi * 5.6 * t) + jit) / SR
+    saw = np.zeros(n, np.float32)
+    for k in range(1, min(40, int((SR / 2) / freq))):
+        saw += np.sin(k * ph + rng.uniform(0, 2 * np.pi)) / k
+    saw /= 2.5
+    nz = rng.standard_normal(n).astype(np.float32)
+    nz = nz - np.convolve(nz, np.ones(20) / 20, "same")
+    y = _violin_body(saw + 0.10 * nz) * 0.9 + saw * 0.25
+    atk, rel = int(0.07 * SR), int(0.45 * SR)
     e = np.ones(n, np.float32) * 0.85
-    e[:atk] = np.linspace(0, 1, atk) ** 0.7
+    e[:atk] = np.linspace(0, 1, atk) ** 0.6
     if rel < n: e[-rel:] = np.linspace(0.85, 0, rel)
     if tremolo > 0:
-        e = e * (1 - tremolo * 0.45 * (0.5 + 0.5 * np.sin(2 * np.pi * 6.5 * t)))
-    sig = (y * shimmer + hiss * 0.05 + grip * 0.18) * e
-    return (sig * amp).astype(np.float32)
+        e = e * (1 - tremolo * 0.4 * (0.5 + 0.5 * np.sin(2 * np.pi * 6.2 * t)))
+    return (y * e * amp).astype(np.float32)
+
+
+def softkick(amp=0.26, dur=0.5):
+    """A deep, soft pulse — low sine with a quick pitch drop, butter-low-passed so there
+    is no click and no snare. The breathing beat."""
+    n = int(dur * SR); t = np.arange(n) / SR
+    f = 80 * np.exp(-t * 10) + 42
+    y = np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-t * 5)
+    b, a = butter(2, 120 / (SR / 2)); y = lfilter(b, a, y)
+    return (y / (np.max(np.abs(y)) + 1e-9) * amp).astype(np.float32)
 
 
 def heartbeat(amp=0.16):
@@ -116,15 +131,35 @@ def brush(amp=0.06, dur=0.18):
     return (nz * (np.clip(t / 0.02, 0, 1) * np.exp(-t * 16)) * amp).astype(np.float32)
 
 
-def reverb(x):
-    """Smooth, dense taps (no metallic comb)."""
+def reverb(x, mix=1.0):
+    """A lush hall — diffuse early reflections + a long, HF-damped tail. Gives the
+    sense of a real room that a dry synth lacks."""
+    x = x.astype(np.float32)
     out = x.copy()
-    g = 0.42
-    for i in range(1, 10):
-        d = int((0.021 * i + 0.003) * SR)
-        if d < len(x):
-            out[d:] += x[:-d] * (g * (0.72 ** i))
-    return out
+    for d, g in ((0.007, 0.6), (0.013, 0.5), (0.019, 0.42), (0.029, 0.34), (0.041, 0.27)):
+        dd = int(d * SR)
+        if dd < len(x): out[dd:] += x[:-dd] * (g * 0.5 * mix)          # early reflections
+    tail = np.zeros_like(x)
+    for i in range(1, 16):                                            # long damped tail
+        d = int((0.033 * i + 0.006) * SR)
+        if d >= len(x): break
+        w = 3 + i                                                     # progressive HF damping
+        damped = np.convolve(x[:-d], np.ones(w) / w, "same")
+        tail[d:] += damped * (0.55 * (0.80 ** i) * mix)
+    return out + tail
+
+
+def master(stereo, level=0.9, width=1.22, warmth=1.1):
+    """Finishing chain: gentle tape warmth, stereo width, soft limiting — the polish
+    that separates a demo from a record. Apply once to the final stereo mix."""
+    s = np.asarray(stereo, np.float32)
+    s = np.tanh(s * warmth) / np.tanh(warmth)                         # soft saturation = warmth
+    L, R = s[:, 0], s[:, 1]
+    mid = (L + R) * 0.5; side = (L - R) * 0.5 * width                 # mid/side widen
+    s = np.stack([mid + side, mid - side], 1)
+    s /= (np.max(np.abs(s)) + 1e-9)
+    s = np.tanh(s * 1.05) * level                                     # soft limit
+    return s.astype(np.float32)
 
 
 def add(buf, sig, at):
