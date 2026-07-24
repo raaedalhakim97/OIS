@@ -26,7 +26,7 @@ SDUR = 116.0
 DUR = TITLE_DUR + SDUR
 fx = FX(W, H)
 GOLD = [255, 200, 130]; WARM = [255, 214, 165]; DIMC = [120, 110, 120]
-CENTER_Y = 0.42
+CENTER_Y = 0.50
 CH, EP, TITLE, LAND = "I", "7", "The Missing Note", "the Home Fields"
 APEX_Y = pl.APEX_Y; CX = pl.CX; R = pl.R; CY = pl.CY
 
@@ -81,27 +81,32 @@ SINK = 34                                       # plant feet into the visually-s
 def ball_feet(a):                              # feet position on the ball at screen-angle a
     return CX + R * math.sin(a), CY - R * math.cos(a) + SINK
 
-# ------- the solfège scale laid out on the ground between them -------
+# ------- the scale, written as real music on a staff floating above the keepers -------
 SCALE = [60, 62, 64, 65, 67, 69, 71, 72]       # C major = Do Re Mi Fa Sol La Ti Do
 NAMES = ["Do", "Re", "Mi", "Fa", "Sol", "La", "Ti", "Do"]
 MISS = 3                                        # Fa is the missing step
 PLAY = [50, 52.5, 55, 57.5, 60, 62.5, 65, 67.5]  # played note by note, ascending
 FILL = 88.0                                     # the missing note is given its place
 RUN0 = 95.0                                     # the whole scale rings, quick
-def orb_pos(i):
-    a = lerp(-0.155, 0.155, i / 7.0)
-    sx = CX + R * math.sin(a); sy = CY - R * math.cos(a)
-    nx, ny = math.sin(a), -math.cos(a)
-    off = lerp(52, 122, i / 7.0)                 # rising staircase, floating clear of the grass
-    return sx + nx * off, sy + ny * off
 
-# how bright each orb is at time ts (0..1), and whether it's the empty slot right now
-def orb_light(i, ts):
-    if i == MISS and ts < FILL:                  # missing: dark, with faint searching flicker
+# staff geometry (treble clef). y measured in staff-line gaps from the middle line.
+SCX = 0.50 * W; SW = 0.70 * W; SY = 0.315 * H; LG = 25.0
+SLX = SCX - SW / 2; SRX = SCX + SW / 2          # staff left / right edge (NOT audio SR!)
+NX0, NX1 = SLX + 0.235 * SW, SRX - 0.045 * SW   # where the note column starts / ends
+# C major on a treble staff, top of head measured in LG from the middle line (B4=0):
+YSTEP = [3.0, 2.5, 2.0, 1.5, 1.0, 0.5, 0.0, -0.5]   # C4(ledger) D4 E4 F4 G4 A4 B4 C5
+STAFF_COL = (206, 196, 178); NOTE_COL = (236, 226, 205); INKGOLD = (255, 214, 150)
+
+def note_xy(i):
+    return NX0 + (NX1 - NX0) * i / 7.0, SY + YSTEP[i] * LG
+
+# glow amount for note i at time ts (0..1); empty=True while it is the missing slot
+def note_light(i, ts):
+    if i == MISS and ts < FILL:                  # missing: hollow, faint searching flicker
         if 70 <= ts <= FILL:
-            return 0.12 + 0.10 * (0.5 + 0.5 * math.sin(ts * 4)), True
-        return 0.08, True
-    base = 0.30
+            return 0.15 + 0.12 * (0.5 + 0.5 * math.sin(ts * 4)), True
+        return 0.0, True
+    base = 0.0
     pt = PLAY[i]
     if pt <= ts <= pt + 1.2:                      # rings as it is played
         base = max(base, 1.0 - (ts - pt) / 1.2)
@@ -111,7 +116,7 @@ def orb_light(i, ts):
         rt = RUN0 + j * 0.5
         if j == i and rt <= ts <= rt + 0.8:
             base = max(base, 1.0 - (ts - rt) / 0.8)
-    if ts > RUN0 + 5: base = max(base, 0.55)      # stays lit once whole
+    if ts > RUN0 + 5: base = max(base, 0.5)       # stays lit once whole
     return clamp(base), False
 
 
@@ -160,35 +165,86 @@ def draw_caption(im, ts):
                 yy += int((bb[3] - bb[1]) * 1.5)
 
 
-def _orb_y(i, ts):
-    tx, ty = orb_pos(i)
-    vis = smooth(42 + i * 0.35, 46 + i * 0.35, ts)        # scale rises into place, staggered
-    return tx, lerp(ty + 22, ty, vis), vis
+def _clef(d, cx, alpha):
+    """A hand-drawn treble (G) clef, belly centred on the G line (SY + LG)."""
+    gy = SY + LG                                      # G4 line
+    col = STAFF_COL + (alpha,)
+    def curve(pts, w):                                # smooth polyline through anchor pts
+        n = len(pts); out = []
+        for k in range(n - 1):
+            p0 = pts[max(0, k - 1)]; p1 = pts[k]; p2 = pts[k + 1]; p3 = pts[min(n - 1, k + 2)]
+            for s in range(9):
+                t = s / 9.0; t2 = t * t; t3 = t2 * t
+                x = 0.5 * ((2 * p1[0]) + (-p0[0] + p2[0]) * t +
+                           (2 * p0[0] - 5 * p1[0] + 4 * p2[0] - p3[0]) * t2 +
+                           (-p0[0] + 3 * p1[0] - 3 * p2[0] + p3[0]) * t3)
+                y = 0.5 * ((2 * p1[1]) + (-p0[1] + p2[1]) * t +
+                           (2 * p0[1] - 5 * p1[1] + 4 * p2[1] - p3[1]) * t2 +
+                           (-p0[1] + 3 * p1[1] - 3 * p2[1] + p3[1]) * t3)
+                out.append((x, y))
+        d.line(out, fill=col, width=w, joint="curve")
+    L = LG
+    pts = [(cx - 0.15 * L, gy + 2.7 * L),             # bottom tail
+           (cx - 0.55 * L, gy + 1.9 * L),
+           (cx + 0.55 * L, gy + 1.0 * L),
+           (cx + 0.95 * L, gy - 0.1 * L),             # belly right
+           (cx + 0.30 * L, gy - 0.9 * L),
+           (cx - 0.75 * L, gy - 0.4 * L),             # belly left
+           (cx - 0.85 * L, gy + 0.7 * L),
+           (cx + 0.10 * L, gy + 1.2 * L),             # spiral into centre
+           (cx + 0.55 * L, gy + 0.4 * L),
+           (cx + 0.15 * L, gy - 1.1 * L),
+           (cx - 0.10 * L, gy - 2.7 * L),             # up the stem
+           (cx + 0.20 * L, gy - 3.4 * L)]             # top hook
+    curve(pts, max(2, int(0.16 * L)))
+    d.ellipse([cx - 0.20 * L, gy + 2.6 * L, cx + 0.16 * L, gy + 3.0 * L], fill=col)  # tail dot
 
 
-def scale_glows(a, ts):
-    """Add the lit note-orb glows into the float buffer (for bloom)."""
+def staff_glows(a, ts):
+    """Gold glows behind the lit note-heads (into the float buffer, for bloom)."""
+    vis = smooth(41, 47, ts)
+    if vis < 0.02: return
     for i in range(8):
-        tx, oy, vis = _orb_y(i, ts)
-        if vis < 0.02: continue
-        lv, empty = orb_light(i, ts)
-        if not empty:
-            glow(a, tx, oy, 15 + 10 * lv, GOLD, (0.35 + 0.9 * lv) * vis)
+        lv, empty = note_light(i, ts)
+        if lv <= 0.02: continue
+        x, y = note_xy(i)
+        glow(a, x, y, 12 + 12 * lv, GOLD, (0.25 + 0.95 * lv) * vis)
 
 
-def scale_labels(im, ts):
-    """Draw the empty-slot ring + solfège names on the image."""
-    d = ImageDraw.Draw(im, "RGBA")
+def staff_draw(im, ts):
+    """Draw the staff, clef, time signature, note-heads/stems and solfège lyrics."""
+    vis = smooth(41, 47, ts)
+    if vis < 0.02: return
+    yshift = int((1 - vis) * 26)                      # the staff settles down as it appears
+    im2 = Image.new("RGBA", im.size, (0, 0, 0, 0)); d = ImageDraw.Draw(im2)
+    A = int(255 * vis)
+    for k in (-2, -1, 0, 1, 2):                       # five staff lines
+        yy = SY + k * LG
+        d.line([(SLX, yy), (SRX, yy)], fill=STAFF_COL + (int(150 * vis),), width=2)
+    _clef(d, SLX + 0.10 * SW, int(190 * vis))
+    d.text((SLX + 0.155 * SW, SY - 1.55 * LG), "C", font=font(int(2.7 * LG)),
+           fill=STAFF_COL + (int(190 * vis),))        # common time
     for i in range(8):
-        tx, oy, vis = _orb_y(i, ts)
-        if vis < 0.02: continue
-        lv, empty = orb_light(i, ts)
-        if empty:
-            r = 15
-            d.ellipse([tx - r, oy - r, tx + r, oy + r], outline=(165, 155, 168, int(160 * vis)), width=3)
-        col = (245, 230, 205, int((120 + 130 * lv) * vis)) if not empty else (168, 160, 170, int(150 * vis))
-        bb = d.textbbox((0, 0), NAMES[i], font=SOLF)
-        d.text((tx - (bb[2] - bb[0]) / 2, oy + 26), NAMES[i], font=SOLF, fill=col)
+        x, y = note_xy(i)
+        lv, empty = note_light(i, ts)
+        if i == 0:                                    # ledger line under low Do (C4)
+            d.line([(x - 1.05 * LG, y), (x + 1.05 * LG, y)], fill=STAFF_COL + (int(150 * vis),), width=2)
+        rx, ry = 0.62 * LG, 0.46 * LG
+        nc = tuple(int(NOTE_COL[j] + (INKGOLD[j] - NOTE_COL[j]) * lv) for j in range(3))
+        stem_top = y - 3.0 * LG
+        if empty:                                     # missing note: hollow head, faint
+            fl = int((70 + 120 * lv) * vis)
+            d.ellipse([x - rx, y - ry, x + rx, y + ry], outline=(180, 172, 184, fl), width=3)
+        else:
+            d.line([(x + rx * 0.85, y - ry * 0.2), (x + rx * 0.85, stem_top)],
+                   fill=nc + (int(200 * vis),), width=max(2, int(0.12 * LG)))
+            d.ellipse([x - rx, y - ry, x + rx, y + ry], fill=nc + (int((180 + 75 * lv) * vis),))
+        bb = d.textbbox((0, 0), NAMES[i], font=SOLF)  # solfège "lyrics" beneath the staff
+        lc = (238, 224, 200, int((150 + 100 * lv) * vis)) if not empty else (180, 172, 184, int(140 * vis))
+        d.text((x - (bb[2] - bb[0]) / 2, SY + 3.7 * LG), NAMES[i], font=SOLF, fill=lc)
+    if yshift:
+        im2 = im2.transform(im2.size, Image.AFFINE, (1, 0, 0, 0, 1, -yshift))
+    im.paste(im2, (0, 0), im2)
 
 
 def draw_glyph(im, x, y, ts, t0):
@@ -211,7 +267,7 @@ def story(ts):
 
     theta = theta_of(ts)
     im = Image.fromarray(a.clip(0, 255).astype(np.uint8))
-    pl.draw_surface(im, theta, scene, front_clear=0.24 if ts > 40 else 0.0)
+    pl.draw_surface(im, theta, scene)
     a = np.asarray(im, np.float32).copy()
     world.atmosphere(a, ts, scene)
 
@@ -233,8 +289,7 @@ def story(ts):
     glow(a, mx, my - 0.11 * H, 22, GOLD, 0.9 * (0.9 + 0.1 * math.sin(ts * 3)))
     if seen > 0.02:
         glow(a, ox, oy - 0.11 * H, 21, WARM, seen * 0.85 * (0.9 + 0.1 * math.sin(ts * 3 + 1)))
-    if ts > 41:
-        scale_glows(a, ts)
+    staff_glows(a, ts)
 
     im = Image.fromarray(a.clip(0, 255).astype(np.uint8))
     im.paste(mspr, (int(mx - mspr.size[0] / 2), int(my - mfoot)), mspr)
@@ -242,16 +297,11 @@ def story(ts):
         if seen < 0.995:
             al = ospr.getchannel("A").point(lambda v: int(v * seen)); ospr.putalpha(al)
         im.paste(ospr, (int(ox - ospr.size[0] / 2), int(oy - ofoot)), ospr)
-    if ts > 41:
-        scale_labels(im, ts)
+    staff_draw(im, ts)
 
-    # dialogue / play glyphs
-    if 24 <= ts <= 28: draw_glyph(im, mx, my - 0.14 * H, ts, 25.0)     # the Keeper asks
-    if 33 <= ts <= 37: draw_glyph(im, ox, oy - 0.14 * H, ts, 33.5)     # the other answers
-    for i in range(8):
-        if i == MISS: continue
-        tx, ty = orb_pos(i); draw_glyph(im, tx, ty, ts, PLAY[i])
-    draw_glyph(im, *orb_pos(MISS), ts, FILL)
+    # dialogue glyphs above the two keepers
+    if 24 <= ts <= 28: draw_glyph(im, mx, my - 0.16 * H, ts, 25.0)     # the Keeper asks
+    if 33 <= ts <= 37: draw_glyph(im, ox, oy - 0.16 * H, ts, 33.5)     # the other answers
 
     draw_caption(im, ts)
 
