@@ -1,10 +1,10 @@
 {
-  "id": "ch1_ep4",
+  "id": "ch1_ep3",
   "chapter": "I",
-  "episode": "4",
-  "title": "The Hollow",
-  "land": "the Fading Edge",
-  "caption": "THE OBSERVER WORLD — Chapter I, Episode 4: The Hollow. The first battle. The dark takes a shape and cuts the song apart. The Keeper fights the only way that works — by making two notes agree before the dark pulls them apart. Consonance is armor.  the more you know, the more you observe.  #theobserver #animation #ambient #storytelling",
-  "path": "cineengine/examples/ch1_ep4_the_hollow.mp4",
-  "updated": "2026-07-23"
+  "episode": "3",
+  "title": "The Home of Five",
+  "land": "the Home Fields",
+  "caption": "THE OBSERVER WORLD — Chapter I, Episode 3: The Home of Five. The song broke into five notes, lost across the worlds. The Keeper brings each home to its place in the scale — and learns you cannot carry a note home; you make a home worth coming to.  the more you know, the more you observe.  #theobserver #animation #ambient #music #storytelling",
+  "path": "cineengine/examples/ch1_ep3_the_home_of_five.mp4",
+  "updated": "2026-07-24"
 }
