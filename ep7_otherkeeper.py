@@ -1,10 +1,12 @@
 """
-THE OBSERVER WORLD · CHAPTER I · EPISODE 7 — "The Other Keeper"  (introduces the world)
-On the slow-turning little planet, the Keeper meets another keeper already there. It
-does not speak — it sings. Through a call-and-response the other keeper welcomes him and
-introduces the world: every soul is a note; we don't fix them, we help them find who
-they harmonize with. Then the two walk on together. Slow earth, two keepers, engine
-score (piano conversation that literally harmonises). ~2:00.
+THE OBSERVER WORLD · CHAPTER I · EPISODE 7 — "The Missing Note"
+One note is missing from the song. The Keeper searches the turning world and STOPS
+when he meets another keeper — and asks him for the missing note. The other keeper
+will not simply give it: "it is not mine to give." Instead he lays out the SOLFÈGE
+SCALE on the ground — Do Re Mi Fa Sol La Ti Do — and the two play it note by note.
+Where Fa should ring, there is silence: that empty step is the missing note. They
+give it back its place, the scale rings whole, and they walk on. A note puzzle told
+as story — the hidden lesson is the major scale and finding a pitch by ear. ~2:00.
 """
 import os, sys, math, argparse
 import numpy as np
@@ -20,13 +22,13 @@ import world, planet as pl
 W, H = 1080, 1920
 FPS = 24
 TITLE_DUR = 6.0
-SDUR = 118.0
+SDUR = 116.0
 DUR = TITLE_DUR + SDUR
 fx = FX(W, H)
-GOLD = [255, 200, 130]; WARM = [255, 214, 165]
-CENTER_Y = 0.44
-CH, EP, TITLE, LAND = "I", "7", "The Other Keeper", "the Home Fields"
-APEX_Y = pl.APEX_Y; CX = pl.CX
+GOLD = [255, 200, 130]; WARM = [255, 214, 165]; DIMC = [120, 110, 120]
+CENTER_Y = 0.42
+CH, EP, TITLE, LAND = "I", "7", "The Missing Note", "the Home Fields"
+APEX_Y = pl.APEX_Y; CX = pl.CX; R = pl.R; CY = pl.CY
 
 
 def clamp(x, lo=0.0, hi=1.0): return max(lo, min(hi, x))
@@ -41,7 +43,7 @@ def font(sz):
 def gfont(sz):
     p = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
     return ImageFont.truetype(p, sz) if os.path.exists(p) else ImageFont.load_default()
-FS = font(47); FSM = font(34); GF = gfont(50)
+FS = font(47); FSM = font(34); GF = gfont(50); SOLF = gfont(27)
 
 
 def glow(a, cx, cy, rad, color, alpha):
@@ -58,27 +60,75 @@ def glow(a, cx, cy, rad, color, alpha):
 
 SCENES = ["night", "dawn", "morning", "golden"]
 for s in SCENES: pl.build_sky(s); pl.planet_base(s)
-SEGS = [(0, "night"), (18, "dawn"), (58, "morning"), (100, "golden")]
+SEGS = [(0, "night"), (16, "dawn"), (58, "morning"), (104, "golden")]
 
-MAIN_X = 0.43; OTHER_X0, OTHER_X1 = 0.92, 0.57
+# ------- the world turns only while the Keeper walks; it HOLDS STILL while they solve it -------
+ROT = 0.13
+def _rate(u):
+    if u < 12: return 1.0                     # searching — world turns
+    if u < 18: return 1.0 - smooth(12, 18, u) # he sees the keeper — world eases to a stop
+    if u < 104: return 0.0                    # the puzzle — world holds still
+    if u < 110: return smooth(104, 110, u)    # walk on — world turns again
+    return 1.0
+_tt = np.linspace(0, SDUR, int(SDUR * 24) + 1)
+_rs = np.array([_rate(u) for u in _tt])
+_theta = ROT * np.concatenate([[0.0], np.cumsum((_rs[1:] + _rs[:-1]) * 0.5 * np.diff(_tt))])
+def theta_of(ts): return float(np.interp(ts, _tt, _theta))
 
-# the conversation: (time, who, pitch) — the other keeper calls (high), the Keeper
-# answers (low); the intervals are consonant, so the two literally harmonise.
-CONVO = [(52, "o", 69), (55, "m", 65), (60, "o", 72), (63, "m", 69),
-         (74, "o", 74), (77, "m", 65), (88, "o", 72), (90, "m", 60)]
-GLYPHS = [(t, who) for (t, who, p) in CONVO]
+# ------- both keepers on the floor, either side of the apex -------
+AM, AO = -0.27, 0.27
+SINK = 34                                       # plant feet into the visually-solid ground
+def ball_feet(a):                              # feet position on the ball at screen-angle a
+    return CX + R * math.sin(a), CY - R * math.cos(a) + SINK
+
+# ------- the solfège scale laid out on the ground between them -------
+SCALE = [60, 62, 64, 65, 67, 69, 71, 72]       # C major = Do Re Mi Fa Sol La Ti Do
+NAMES = ["Do", "Re", "Mi", "Fa", "Sol", "La", "Ti", "Do"]
+MISS = 3                                        # Fa is the missing step
+PLAY = [50, 52.5, 55, 57.5, 60, 62.5, 65, 67.5]  # played note by note, ascending
+FILL = 88.0                                     # the missing note is given its place
+RUN0 = 95.0                                     # the whole scale rings, quick
+def orb_pos(i):
+    a = lerp(-0.155, 0.155, i / 7.0)
+    sx = CX + R * math.sin(a); sy = CY - R * math.cos(a)
+    nx, ny = math.sin(a), -math.cos(a)
+    off = lerp(52, 122, i / 7.0)                 # rising staircase, floating clear of the grass
+    return sx + nx * off, sy + ny * off
+
+# how bright each orb is at time ts (0..1), and whether it's the empty slot right now
+def orb_light(i, ts):
+    if i == MISS and ts < FILL:                  # missing: dark, with faint searching flicker
+        if 70 <= ts <= FILL:
+            return 0.12 + 0.10 * (0.5 + 0.5 * math.sin(ts * 4)), True
+        return 0.08, True
+    base = 0.30
+    pt = PLAY[i]
+    if pt <= ts <= pt + 1.2:                      # rings as it is played
+        base = max(base, 1.0 - (ts - pt) / 1.2)
+    if i == MISS and abs(ts - FILL) < 1.0:        # the moment it returns
+        base = max(base, 1.0 - abs(ts - FILL))
+    for j in range(8):                            # the final whole-scale run
+        rt = RUN0 + j * 0.5
+        if j == i and rt <= ts <= rt + 0.8:
+            base = max(base, 1.0 - (ts - rt) / 0.8)
+    if ts > RUN0 + 5: base = max(base, 0.55)      # stays lit once whole
+    return clamp(base), False
+
 
 CAPS = [
-    (2.0, 7.0, "he had walked a long way\nalone."),
-    (10.0, 15.0, "then — another light."),
-    (26.0, 32.0, "another keeper,\nalready here."),
-    (40.0, 46.0, "it did not speak.\nit sang."),
-    (58.0, 64.0, "welcome, it seemed to say."),
-    (66.0, 73.0, "this is the observer world.\nevery soul here is a note."),
-    (78.0, 86.0, "some bright, some low,\nsome still lost in the dark."),
-    (92.0, 100.0, "we do not fix them —\nwe help them find\nwho they harmonize with."),
-    (103.0, 109.0, "and the two walked on\ntogether."),
-    (111.0, 116.0, "the more you know,\nthe more you observe."),
+    (2.0, 8.0, "one note was missing\nfrom the song."),
+    (9.5, 14.5, "the Keeper went\nlooking for it."),
+    (18.0, 23.0, "then — another keeper."),
+    (25.0, 31.0, "“do you have it —\nthe missing note?”"),
+    (33.0, 39.0, "“it is not mine to give,”\nit answered."),
+    (41.0, 48.0, "“but we can find it.\nlay out the scale.”"),
+    (50.0, 56.0, "do  re  mi ..."),
+    (57.5, 63.0, "... and there —\nsilence."),
+    (65.0, 72.0, "the fourth step\nwas empty."),
+    (74.0, 81.0, "the missing note:\nFa."),
+    (84.0, 92.0, "they gave it back\nits place."),
+    (95.0, 103.0, "and the scale\nwas whole again."),
+    (106.0, 112.0, "the more you know,\nthe more you observe."),
 ]
 
 
@@ -89,8 +139,8 @@ def scene_blend(ts):
     s0, n0 = SEGS[i]
     if i + 1 < len(SEGS):
         s1, n1 = SEGS[i + 1]
-        if ts > s1 - 3.0:
-            return n0, n1, smooth(s1 - 3.0, s1, ts)
+        if ts > s1 - 1.8:
+            return n0, n1, smooth(s1 - 1.8, s1, ts)
     return n0, n0, 0.0
 
 
@@ -110,14 +160,43 @@ def draw_caption(im, ts):
                 yy += int((bb[3] - bb[1]) * 1.5)
 
 
-def draw_glyphs(im, ts, mpos, opos):
+def _orb_y(i, ts):
+    tx, ty = orb_pos(i)
+    vis = smooth(42 + i * 0.35, 46 + i * 0.35, ts)        # scale rises into place, staggered
+    return tx, lerp(ty + 22, ty, vis), vis
+
+
+def scale_glows(a, ts):
+    """Add the lit note-orb glows into the float buffer (for bloom)."""
+    for i in range(8):
+        tx, oy, vis = _orb_y(i, ts)
+        if vis < 0.02: continue
+        lv, empty = orb_light(i, ts)
+        if not empty:
+            glow(a, tx, oy, 15 + 10 * lv, GOLD, (0.35 + 0.9 * lv) * vis)
+
+
+def scale_labels(im, ts):
+    """Draw the empty-slot ring + solfège names on the image."""
     d = ImageDraw.Draw(im, "RGBA")
-    for (t, who) in GLYPHS:
-        age = ts - t
-        if 0 <= age <= 1.6:
-            al = np.interp(age, [0, 0.3, 1.1, 1.6], [0, 1, 1, 0])
-            x, y = (opos if who == "o" else mpos)
-            d.text((x, y - 42 - age * 30), "♪", font=GF, fill=(255, 208, 146, int(230 * al)), anchor="mm")
+    for i in range(8):
+        tx, oy, vis = _orb_y(i, ts)
+        if vis < 0.02: continue
+        lv, empty = orb_light(i, ts)
+        if empty:
+            r = 15
+            d.ellipse([tx - r, oy - r, tx + r, oy + r], outline=(165, 155, 168, int(160 * vis)), width=3)
+        col = (245, 230, 205, int((120 + 130 * lv) * vis)) if not empty else (168, 160, 170, int(150 * vis))
+        bb = d.textbbox((0, 0), NAMES[i], font=SOLF)
+        d.text((tx - (bb[2] - bb[0]) / 2, oy + 26), NAMES[i], font=SOLF, fill=col)
+
+
+def draw_glyph(im, x, y, ts, t0):
+    age = ts - t0
+    if 0 <= age <= 1.4:
+        al = np.interp(age, [0, 0.3, 1.0, 1.4], [0, 1, 1, 0])
+        ImageDraw.Draw(im, "RGBA").text((x, y - 40 - age * 26), "♪", font=GF,
+                                        fill=(255, 208, 146, int(220 * al)), anchor="mm")
 
 
 def story(ts):
@@ -130,44 +209,50 @@ def story(ts):
     a[mask] = base[mask]
     scene = n1 if f > 0.5 else n0
 
-    theta = 0.13 * ts                                     # SLOW earth
+    theta = theta_of(ts)
     im = Image.fromarray(a.clip(0, 255).astype(np.uint8))
-    pl.draw_surface(im, theta, scene)
+    pl.draw_surface(im, theta, scene, front_clear=0.24 if ts > 40 else 0.0)
     a = np.asarray(im, np.float32).copy()
     world.atmosphere(a, ts, scene)
 
-    # the other keeper rises over the turning horizon, then comes to stand near him
-    seen = smooth(9, 13, ts)
-    ox = lerp(OTHER_X0, OTHER_X1, smooth(20, 46, ts))
-    o_walk = 20 < ts < 46 or ts > 102
-    o_face = -1
-    ospr, ofy, oodx, oody = character(128, "walk" if o_walk else "stand", ts, o_face,
-                                      lean=0.03 * math.sin(ts * 1.0))
-    oox = ox * W + oodx; ooy = APEX_Y + oody
+    # the Keeper — searches (walking, world turns), then stops and faces the other
+    m_walk = ts < 14
+    mfx, mfy0 = ball_feet(AM)
+    mlift = smooth(85, 88, ts) * (1 - smooth(91, 93, ts))     # lifts to give the note its place
+    mspr, mfoot, mdx, mdy = character(132, "walk" if m_walk else "stand", ts, 1,
+                                      lift=0.9 * mlift, lean=0.03 * math.sin(ts * 1.1))
+    mx = mfx + mdx; my = mfy0 + mdy
 
-    # the Keeper — travels, then turns to face the other, then walks on together
-    m_walk = ts < 20 or ts > 102
-    m_face = 1
-    mx = lerp(0.5, MAIN_X, smooth(16, 26, ts))
-    mspr, mfy, modx, mody = character(132, "walk" if m_walk else "stand", ts, m_face,
-                                      lean=0.03 * math.sin(ts * 1.1))
-    mox = mx * W + modx; moy = APEX_Y + mody
+    # the other keeper — waits on the floor, faces the Keeper
+    seen = smooth(13, 18, ts)
+    ofx, ofy0 = ball_feet(AO)
+    ospr, ofoot, odx, ody = character(130, "stand", ts, -1, lean=0.03 * math.sin(ts * 0.9 + 1))
+    ox = ofx + odx; oy = ofy0 + ody
 
+    # glows: both keepers + the scale of note-orbs on the ground
+    glow(a, mx, my - 0.11 * H, 22, GOLD, 0.9 * (0.9 + 0.1 * math.sin(ts * 3)))
     if seen > 0.02:
-        glow(a, oox, ooy, 22, WARM, seen * 0.9 * (0.9 + 0.1 * math.sin(ts * 3 + 1)))
-    glow(a, mox, moy, 24, GOLD, 0.95 * (0.9 + 0.1 * math.sin(ts * 3)))
-    # a thread of light between them once they harmonise
-    bond = smooth(52, 92, ts)
-    if bond > 0.02:
-        for i in range(14):
-            u = i / 13; px = lerp(mox, oox, u); py = lerp(moy, ooy, u) - 0.03 * H * math.sin(math.pi * u)
-            glow(a, px, py, 4, GOLD, bond * 0.4 * (0.6 + 0.4 * math.sin(ts * 3 + i)))
+        glow(a, ox, oy - 0.11 * H, 21, WARM, seen * 0.85 * (0.9 + 0.1 * math.sin(ts * 3 + 1)))
+    if ts > 41:
+        scale_glows(a, ts)
 
     im = Image.fromarray(a.clip(0, 255).astype(np.uint8))
+    im.paste(mspr, (int(mx - mspr.size[0] / 2), int(my - mfoot)), mspr)
     if seen > 0.02:
-        im.paste(ospr, (int(ox * W - ospr.size[0] / 2), int(APEX_Y - ofy)), ospr)
-    im.paste(mspr, (int(mx * W - mspr.size[0] / 2), int(APEX_Y - mfy)), mspr)
-    draw_glyphs(im, ts, (mox, APEX_Y - 0.16 * H), (oox, APEX_Y - 0.16 * H))
+        if seen < 0.995:
+            al = ospr.getchannel("A").point(lambda v: int(v * seen)); ospr.putalpha(al)
+        im.paste(ospr, (int(ox - ospr.size[0] / 2), int(oy - ofoot)), ospr)
+    if ts > 41:
+        scale_labels(im, ts)
+
+    # dialogue / play glyphs
+    if 24 <= ts <= 28: draw_glyph(im, mx, my - 0.14 * H, ts, 25.0)     # the Keeper asks
+    if 33 <= ts <= 37: draw_glyph(im, ox, oy - 0.14 * H, ts, 33.5)     # the other answers
+    for i in range(8):
+        if i == MISS: continue
+        tx, ty = orb_pos(i); draw_glyph(im, tx, ty, ts, PLAY[i])
+    draw_glyph(im, *orb_pos(MISS), ts, FILL)
+
     draw_caption(im, ts)
 
     frame = np.asarray(im, np.float32)
@@ -187,20 +272,31 @@ def build_audio():
     n = int(DUR * SR)
     dL = np.zeros(n, np.float32); dR = np.zeros(n, np.float32)
     wL = np.zeros(n, np.float32); wR = np.zeros(n, np.float32)
-    def d(s, at, pan=0.5): add(dL, s * (1 - pan), at); add(dR, s * pan, at)
-    def w(s, at, pan=0.5): add(wL, s * (1 - pan), at); add(wR, s * pan, at)
-    w(pad([midi(53), midi(57), midi(60)], DUR - 6, 0.045), 6, 0.5)
-    d(piano(midi(53), 5, 0.13), 8, 0.45)                  # the Keeper, alone
-    d(piano(midi(57), 4, 0.10), 14, 0.45)
-    for (t, who, p) in CONVO:                             # the conversation (o=right/high, m=left/low)
-        pan = 0.66 if who == "o" else 0.36
-        d(piano(midi(p), 3.2, 0.15 if who == "o" else 0.14), t, pan)
-    # they harmonise: a warm F-major chord blooms as they walk on together
-    w(pad([midi(53), midi(57), midi(60), midi(65)], 16, 0.06), 100, 0.5)
-    w(bass(midi(41), 16, 0.07), 100, 0.5)
-    for i, m in enumerate([53, 57, 60, 65]): d(piano(midi(m), 5, 0.12), 103 + i * 0.6, 0.5)
-    for t in np.arange(30, 116, 1.6): d(softkick(0.10), t, 0.5)   # a soft, slow walking pulse
-    d(piano(midi(53), 8, 0.15), 116, 0.5)
+    A = TITLE_DUR
+    def d(s, at, pan=0.5): add(dL, s * (1 - pan), A + at); add(dR, s * pan, A + at)
+    def w(s, at, pan=0.5): add(wL, s * (1 - pan), A + at); add(wR, s * pan, A + at)
+
+    w(pad([midi(48), midi(55), midi(60)], SDUR - 6, 0.04), 4, 0.5)          # soft drone
+    for t in np.arange(2, 14, 1.4): d(softkick(0.09), t, 0.5)                # walking pulse (search)
+
+    # the Keeper asks (rising question, left) ; the other declines (low, right)
+    d(piano(midi(64), 1.4, 0.13), 25.0, 0.36); d(piano(midi(69), 2.2, 0.14), 26.4, 0.36)
+    d(piano(midi(50), 3.2, 0.12), 34.0, 0.63); d(bass(midi(38), 3.0, 0.06), 34.0, 0.5)
+    # the other lays out the scale (a small upward flourish, right)
+    for j, m in enumerate([60, 64, 67]): d(piano(midi(m), 1.2, 0.11), 43 + j * 0.5, 0.6)
+
+    # play the scale note by note — Fa (index 3) is SILENT: that gap is the missing note
+    for i, m in enumerate(SCALE):
+        if i == MISS: continue
+        d(piano(midi(m), 2.0, 0.14), PLAY[i], 0.5)
+    d(piano(midi(65), 3.4, 0.17), FILL, 0.5)                                 # Fa returns, warm
+    w(pad([midi(53), midi(57), midi(60), midi(65)], 8, 0.05), FILL, 0.5)
+    for j, m in enumerate(SCALE): d(piano(midi(m), 1.6, 0.12), RUN0 + j * 0.5, 0.5)  # whole scale
+    # resolve + walk on
+    w(pad([midi(48), midi(55), midi(60), midi(64)], 14, 0.05), 100, 0.5)
+    w(bass(midi(36), 14, 0.06), 100, 0.5)
+    for t in np.arange(105, 114, 1.4): d(softkick(0.09), t, 0.5)
+
     dry = np.stack([reverb(dL, mix=0.45), reverb(dR, mix=0.45)], 1)
     wet = np.stack([reverb(wL, mix=1.0), reverb(wR, mix=1.0)], 1)
     mix = master(dry * 0.92 + wet)
@@ -230,9 +326,9 @@ def main():
     ff = imageio_ffmpeg.get_ffmpeg_exe()
     subprocess.run([ff, "-y", "-i", "ep7_silent.mp4", "-i", "ep7.wav", "-c:v", "libx264", "-crf", "27",
                     "-preset", "fast", "-pix_fmt", "yuv420p", "-movflags", "+faststart",
-                    "-c:a", "aac", "-b:a", "160k", "-shortest", "ch1_ep7_the_other_keeper.mp4"],
+                    "-c:a", "aac", "-b:a", "160k", "-shortest", "ch1_ep7_the_missing_note.mp4"],
                    check=True, capture_output=True)
-    print("Done -> ch1_ep7_the_other_keeper.mp4")
+    print("Done -> ch1_ep7_the_missing_note.mp4")
 
 
 if __name__ == "__main__":
