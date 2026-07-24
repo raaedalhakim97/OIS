@@ -43,6 +43,13 @@
       "episode": "6",
       "title": "The Heartbeat",
       "path": "cineengine/examples/ch1_ep6_the_heartbeat.mp4"
+    },
+    {
+      "id": "ch1_ep7",
+      "chapter": "I",
+      "episode": "7",
+      "title": "The Other Keeper",
+      "path": "cineengine/examples/ch1_ep7_the_other_keeper.mp4"
     }
   ]
 }
