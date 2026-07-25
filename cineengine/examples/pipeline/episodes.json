@@ -78,6 +78,13 @@
       "episode": "1",
       "title": "The Echo That Came Back",
       "path": "cineengine/examples/ch2_ep1_the_echo_that_came_back.mp4"
+    },
+    {
+      "id": "ch2_ep2",
+      "chapter": "II",
+      "episode": "2",
+      "title": "The Cold Trail",
+      "path": "cineengine/examples/ch2_ep2_the_cold_trail.mp4"
     }
   ]
 }
