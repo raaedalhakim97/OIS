@@ -503,3 +503,18 @@ one by one, until the song forgets itself.
 **Rules for Ch II:** every action beat must run on a music mechanic already taught;
 every new land = a new key; the staff stays the HUD (notes stolen = heads going dark);
 the Keeper never fights with force — he fights with harmony, rhythm, and rests.
+
+---
+
+## PART IX — THE OBSERVER'S EYE (framing standard — applies to every video)
+
+The Observer is the one WATCHING the world. The screen itself is the Observer's eye:
+the soft fade at the four corners/edges (the vignette) is the rim of that eye.
+
+**The blink transition.** Scene-to-scene moves (including out of the title card) are
+made by BLINKING: the corner fades sweep inward like closing eyelids (top and bottom
+lids meeting, corners deepening), a beat of dark, then they open on the new scene.
+Close ≈ 0.25–0.35s, hold ≈ 0.1s, open ≈ 0.4–0.5s (opening slower than closing, like
+a real eye). Big story reveals may use a slow half-blink; the Silence may force a
+blink (the eye flinches). This makes every cut feel like the Observer moving its gaze
+— the world is always being watched.
