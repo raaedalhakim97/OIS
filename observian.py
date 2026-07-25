@@ -34,7 +34,21 @@ LEXICON = {
     "danger": "Fa Ti Fa",
     "thank you": "Mi La Sol",
     "the song has begun": "Do Re Mi Sol",
+    # --- Chapter II ---
+    "listen": "Fa Mi",                   # question toward the other = attend
+    "who are you": "Fa Do",              # question the origin
+    "something is wrong": "Fa Sol Fa",   # the harmony is in question
+    "the song is broken": "Do Re Mi Fa",  # "the song has begun" with harmony -> doubt
+    "i hear you": "Mi Do Sol",           # you reach my harmony
+    "wait": "Do Do",                     # remain at the origin
+    "i am afraid": "La Fa La",           # feeling, doubt, feeling
+    "what now": "Fa Re",                 # question the motion = where do we go
 }
+
+# The Silence does not speak in notes. It answers with a REST — the absence where a
+# reply should be. Use silence(seconds) in a scene to give it a line.
+def silence(seconds):
+    return seconds
 
 # letter -> note (anchors: A→Ti B→Fa C→Sol, HELLO → Fa Mi Sol Sol Ti)
 LETTERS = {

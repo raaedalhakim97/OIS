@@ -71,6 +71,13 @@
       "episode": "10",
       "title": "The First Song",
       "path": "cineengine/examples/ch1_ep10_the_first_song.mp4"
+    },
+    {
+      "id": "ch2_ep1",
+      "chapter": "II",
+      "episode": "1",
+      "title": "The Echo That Came Back",
+      "path": "cineengine/examples/ch2_ep1_the_echo_that_came_back.mp4"
     }
   ]
 }
