@@ -1,11 +1,13 @@
 """
-THE OBSERVER WORLD · CHAPTER I · EPISODE 8 — "The First Note"
-The Keeper has only ever helped OTHER notes find their place; tonight he finds one of
-his own. It rings high and bright — but where does it belong on the scale? He tests it:
-not Mi, not Sol... then he sounds it against low Do and the two fuse into one. The
-puzzle's answer is the OCTAVE: his note has a different voice but the same heart — high
-or low, Do is Do. He sets it home, and both Do's light, joined by an octave brace. The
-hidden lesson is octave equivalence: the same note, same key, a different sound. ~1:48.
+THE OBSERVER WORLD · CHAPTER I · EPISODE 8 — "The First Note"  (rich cut)
+Every night the Keeper tucks the world's notes into their places — and walks home
+with empty hands. Tonight, caught in the grass, he finds a small light of his own.
+It rings HIGH — too high for the songs he knows. He tries it beside Ti (it burns —
+a half step), above Re (restless — a seventh); he begins to believe it belongs to
+no song at all. Then the deepest stone of the empty scale hums by itself, and his
+note answers — call and response — until the two sound together and fuse: the OCTAVE.
+He carries it to the top of the staff: high or low, Do is Do. One note, two homes.
+Hidden lesson: octave equivalence. ~1:52.
 """
 import os, sys, math, argparse
 import numpy as np
@@ -17,21 +19,23 @@ from character import character
 from make_music import SR, midi, piano, pad, bass, softkick, reverb, master, add, write_wav
 import title_card as tc
 import world, planet as pl, staff
+import flow as fl
 
 W, H = 1080, 1920
 FPS = 24
 TITLE_DUR = 6.0
-SDUR = 104.0
+SDUR = 106.0
 DUR = TITLE_DUR + SDUR
 fx = FX(W, H)
 GOLD = [255, 200, 130]; WARM = [255, 214, 165]; COOL = [150, 172, 214]
+NOTEC = [255, 228, 185]                              # his note: a touch whiter than the lantern
 CENTER_Y = 0.52
 CH, EP, TITLE, LAND = "I", "8", "The First Note", "the Home Fields"
 APEX_Y = pl.APEX_Y; CX = pl.CX; R = pl.R; CY = pl.CY
 SINK = 34
 LG = staff.LG; SY = staff.SY
-IDX_LO, IDX_HI = 0, 7                              # the two Do's (C4 and C5)
-PLACED = 69.0                                      # his note settles into high Do
+FEET = APEX_Y + SINK
+PLACED = 72.5                                        # his note settles into high Do
 
 
 def clamp(x, lo=0.0, hi=1.0): return max(lo, min(hi, x))
@@ -63,14 +67,14 @@ def glow(a, cx, cy, rad, color, alpha):
 
 SCENES = ["night", "dawn", "morning", "golden"]
 for s in SCENES: pl.build_sky(s); pl.planet_base(s)
-SEGS = [(0, "night"), (14, "dawn"), (56, "morning"), (92, "golden")]
+SEGS = [(0, "night"), (20, "dawn"), (60, "morning"), (96, "golden")]
 
 ROT = 0.13
 def _rate(u):
     if u < 12: return 1.0
-    if u < 18: return 1.0 - smooth(12, 18, u)
-    if u < 90: return 0.0
-    if u < 96: return smooth(90, 96, u)
+    if u < 17: return 1.0 - smooth(12, 17, u)
+    if u < 92: return 0.0
+    if u < 98: return smooth(92, 98, u)
     return 1.0
 _tt = np.linspace(0, SDUR, int(SDUR * 24) + 1)
 _rs = np.array([_rate(u) for u in _tt])
@@ -78,40 +82,95 @@ _theta = ROT * np.concatenate([[0.0], np.cumsum((_rs[1:] + _rs[:-1]) * 0.5 * np.
 def theta_of(ts): return float(np.interp(ts, _tt, _theta))
 
 
-# --- his note's journey across the staff as he tests where it belongs ---
-def above(i):
-    x, y = staff.note_xy(i); return x, y - 1.15 * LG
-FEET = APEX_Y + SINK
-REST = (0.615 * W, FEET - 0.03 * H)
-HOVER = (0.5 * W, SY - 2.5 * LG)
-SEG = [(14, 30, REST, HOVER), (30, 33, HOVER, above(2)), (33, 40, above(2), above(2)),
-       (40, 42, above(2), above(4)), (42, 48, above(4), above(4)), (48, 51, above(4), above(0)),
-       (51, 64, above(0), above(0)), (64, PLACED, above(0), above(7))]
-def orb_pos(ts):
-    if ts < 14: return REST
-    for (t0, t1, p0, p1) in SEG:
-        if t0 <= ts <= t1:
-            u = smooth(t0, t1, ts)
-            arc = 0.0 if p0 == p1 else 0.05 * H * math.sin(math.pi * u)
-            return lerp(p0[0], p1[0], u), lerp(p0[1], p1[1], u) - arc
-    return above(7)
+GRASS = (0.615 * W, FEET - 14)
+DO0 = staff.note_xy(0); DO7 = staff.note_xy(7)
+TI6 = staff.note_xy(6); RE1 = staff.note_xy(1)
+TOP = (0.50 * W, SY - 2.4 * LG)
+TIH = (TI6[0], TI6[1] - 1.1 * LG)
+REH = (RE1[0], RE1[1] - 1.2 * LG)
+DOWN = (0.50 * W, SY + 6.8 * LG)
+DO0H = (DO0[0], DO0[1] - 1.2 * LG)
 
-# (time, slot, is_match): flashes as he sounds his note against a slot
-TESTS = [(35.0, 2, False), (44.0, 4, False), (53.0, 0, True)]
+
+def note_pos(ts, hand):
+    """His found note: grass -> circles his lantern like a moth -> the trials ->
+    the doubt -> the answer -> home at the top of the staff."""
+    if ts < 16: return GRASS
+    if ts < 18:
+        return fl.flight(GRASS, hand, (ts - 16) / 2, rise=0.10, settle=0.25)
+    if ts <= 29.5:                                     # orbiting the lantern
+        return (hand[0] + 30 * math.cos(ts * 0.9), hand[1] - 6 + 20 * math.sin(ts * 0.9))
+    segs = [(29.5, 31.2, hand, TOP, "fly"),
+            (31.2, 37, TOP, TOP, "hold"),
+            (37, 38.6, TOP, TIH, "land"),
+            (38.6, 43.5, TIH, TIH, "hold"),
+            (43.5, 45.2, TIH, REH, "fly"),
+            (45.2, 50.3, REH, REH, "hold"),
+            (50.3, 52.2, REH, DOWN, "fly"),
+            (52.2, 64.5, DOWN, DOWN, "hold"),
+            (64.5, 66.2, DOWN, DO0H, "fly"),
+            (66.2, 70.5, DO0H, DO0H, "hold"),
+            (70.5, PLACED, DO0H, DO7, "land")]
+    x, y = fl.path(ts, segs, DO7)
+    if 38.6 <= ts <= 43.5:                             # beside Ti it burns — it can't stay
+        k = smooth(38.6, 39.6, ts) * (1 - smooth(42.5, 43.5, ts))
+        y += 0.26 * LG * math.sin(ts * 12) * k
+        x += 0.16 * LG * math.sin(ts * 7.1) * k
+    elif 45.2 <= ts <= 50.3:                           # above Re it wanders, restless
+        x += fl.bob(ts, 9, f1=0.6, f2=1.4, ph=1.0)
+        y += fl.bob(ts, 7, ph=2.2)
+    elif 52.2 <= ts <= 64.5:                           # the doubt — it sinks, barely breathing
+        y += fl.bob(ts, 4, f1=0.5, f2=1.0, ph=0.4)
+    elif 31.2 <= ts <= 37 or 66.2 <= ts <= 70.5:
+        y += fl.bob(ts, 5, ph=1.5)
+    return x, y
+
+
+def note_bright(ts):
+    b = 1.0
+    b *= 1 - 0.55 * (smooth(51, 54, ts) * (1 - smooth(58, 64, ts)))   # dims in the doubt
+    return b
+
+
+def ring(d, cx, cy, t0, ts, col, rmax=52):
+    q = ts - t0
+    if 0 <= q <= 0.9:
+        u = q / 0.9; r = 8 + rmax * fl.ease_out(u); al = int(200 * (1 - u) ** 1.3)
+        d.ellipse([cx - r, cy - r, cx + r, cy + r], outline=col + (al,), width=3)
+
+
+def draw_octave_brace(im, ts):
+    v = smooth(73.5, 76.5, ts)
+    if v < 0.02: return
+    d = ImageDraw.Draw(im, "RGBA")
+    x0 = DO0[0]; x1 = DO7[0]
+    ytop = SY - 3.9 * LG
+    al = int(200 * v)
+    pts = []
+    for k in range(31):
+        u = k / 30.0
+        pts.append((lerp(x0, x1, u * v), ytop + 0.9 * LG * math.sin(math.pi * u)))
+    d.line(pts, fill=(236, 224, 200, al), width=2, joint="curve")
+    d.line([(x0, ytop), (x0, ytop + 0.5 * LG)], fill=(236, 224, 200, al), width=2)
+    if v > 0.9:
+        d.line([(x1, ytop), (x1, ytop + 0.5 * LG)], fill=(236, 224, 200, al), width=2)
+    d.text(((x0 + x1) / 2, ytop - 0.3 * LG), "8", font=BR, fill=(240, 226, 202, al), anchor="mm")
 
 
 CAPS = [
-    (2.0, 8.0, "the Keeper had guided\nmany notes home."),
-    (9.5, 14.5, "tonight he found\none of his own."),
-    (16.5, 22.0, "it rang — high\nand bright."),
-    (24.0, 30.0, "but where on the scale\ndid it belong?"),
-    (33.5, 39.0, "not Mi ..."),
-    (42.0, 47.5, "not Sol ..."),
-    (50.0, 57.0, "then — low Do.\nthe very same note."),
-    (59.0, 66.0, "a different voice —\nthe same heart."),
-    (68.0, 75.0, "high or low,\nDo is Do."),
-    (77.0, 85.0, "one note, two homes.\nthe song had begun."),
-    (88.0, 96.0, "the more you know,\nthe more you observe."),
+    (2.0, 7.5, "every night, the Keeper tucked\nthe world's notes into their places."),
+    (9.0, 14.0, "and every night he walked home\nwith empty hands."),
+    (16.0, 22.0, "then — caught in the grass,\na small light. humming."),
+    (23.5, 29.5, "it rang high and bright —\ntoo high for the songs he knew."),
+    (31.0, 36.5, "but where did it belong?"),
+    (38.0, 43.5, "beside Ti it burned —\ntoo sharp, too close."),
+    (45.0, 50.0, "above Re it wandered,\nrestless."),
+    (51.5, 57.5, "perhaps, he thought,\nit belonged to no song at all."),
+    (58.5, 64.0, "then the deepest stone\nbegan to hum."),
+    (65.0, 70.0, "the same heart —\nsinging one floor higher."),
+    (71.5, 77.0, "high or low,\nDo is Do."),
+    (79.0, 86.5, "one note — two homes.\nand the song had begun."),
+    (96.0, 103.0, "the more you know,\nthe more you observe."),
 ]
 
 
@@ -143,24 +202,14 @@ def draw_caption(im, ts):
                 yy += int((bb[3] - bb[1]) * 1.5)
 
 
-def draw_octave_brace(im, ts):
-    """A brace joining the two Do's, with an '8' — the octave."""
-    v = smooth(58, 64, ts)
-    if v < 0.02: return
-    d = ImageDraw.Draw(im, "RGBA")
-    x0, _ = staff.note_xy(IDX_LO); x1, _ = staff.note_xy(IDX_HI)
-    ytop = SY - 3.1 * LG
-    al = int(200 * v)
-    pts = []
-    for k in range(31):
-        u = k / 30.0; x = lerp(x0, x1, u)
-        y = ytop + 0.9 * LG * math.sin(math.pi * u)       # gentle downward brace
-        pts.append((x, y))
-    d.line(pts, fill=(236, 224, 200, al), width=2, joint="curve")
-    d.line([(x0, ytop), (x0, ytop + 0.5 * LG)], fill=(236, 224, 200, al), width=2)
-    d.line([(x1, ytop), (x1, ytop + 0.5 * LG)], fill=(236, 224, 200, al), width=2)
-    cxm = (x0 + x1) / 2
-    d.text((cxm, ytop - 0.2 * LG), "8", font=BR, fill=(240, 226, 202, al), anchor="mm")
+def keeper_lift(ts):
+    lift = smooth(16, 19, ts) * 0.55                                   # raises the lantern
+    lift -= smooth(29.5, 31.5, ts) * 0.40                              # eases back to carry
+    lift += 0.45 * smooth(36.5, 38, ts) * (1 - smooth(43, 45, ts))     # trial one gesture
+    lift += 0.45 * smooth(45.5, 47, ts) * (1 - smooth(49.5, 51, ts))   # trial two gesture
+    lift -= 0.35 * smooth(51.5, 54, ts) * (1 - smooth(58, 61, ts))     # the doubt: arm falls
+    lift += 0.75 * smooth(64.5, 67, ts) * (1 - smooth(74, 77, ts))     # the answer: arm rises
+    return clamp(lift, -0.6, 1.0)
 
 
 def story(ts):
@@ -179,59 +228,96 @@ def story(ts):
     a = np.asarray(im, np.float32).copy()
     world.atmosphere(a, ts, scene)
 
-    # the Keeper — searches, then stands and works the puzzle with a raised hand
-    walk = ts < 14 or ts > 96
-    lift = smooth(18, 30, ts) * (1 - smooth(PLACED, PLACED + 5, ts))
-    spr, foot, hdx, hdy = character(140, "walk" if walk else "stand", ts, 1,
-                                    lift=lift, lean=0.03 * math.sin(ts * 1.1))
-    kx = CX + hdx; ky = FEET + hdy
-    glow(a, kx, ky - 0.11 * H, 24, GOLD, 0.92 * (0.9 + 0.1 * math.sin(ts * 3)))
+    # the Keeper — PLANTED at the apex; hand offsets go to the lantern, never the body
+    walk = ts < 13 or ts > 93.5
+    lean = (0.03 if walk else 0.0) + fl.idle_sway(ts)
+    spr, foot, odx, ody = character(140, "walk" if walk else "stand", ts, 1,
+                                    lift=keeper_lift(ts), lean=lean)
+    kx = CX                                            # body stays put
+    hand = (kx + odx, FEET + ody)                      # his lantern
+    glow(a, hand[0], hand[1], 22, GOLD, 0.9 * (0.9 + 0.1 * math.sin(ts * 2.6)))
 
-    # his found note, moving across the staff as he tests it
-    seen = smooth(15, 21, ts)
-    placed = ts >= PLACED
-    if seen > 0.02 and not placed:
-        ox, oy = orb_pos(ts)
-        pulse = 0.85 + 0.15 * math.sin(ts * 5)
-        glow(a, ox, oy, 15, WARM, seen * pulse)
-        glow(a, ox, oy, 38, WARM, seen * 0.16)
+    # fireflies converge on the little light in the grass
+    cv = smooth(13.5, 15.5, ts) * (1 - smooth(18, 20, ts))
+    if cv > 0.02:
+        for i in range(8):
+            u = smooth(13.5, 19.0, ts)
+            rr = lerp(150, 12, u)
+            ang = ts * 1.1 + i * 0.785
+            glow(a, GRASS[0] + rr * math.cos(ang), GRASS[1] - abs(rr * math.sin(ang)) * 0.5,
+                 3.5, WARM, cv * 0.28)
 
-    # test flashes: cool for a mismatch, warm bloom for the octave match
-    for (tt, idx, ok) in TESTS:
+    # his found note
+    seen = smooth(14, 16.5, ts)
+    nx, ny = note_pos(ts, hand)
+    nb = note_bright(ts)
+    if seen > 0.02 and ts < PLACED:
+        pulse = 0.85 + 0.15 * math.sin(ts * 3.1 + 0.7)
+        glow(a, nx, ny, 13 * (0.7 + 0.3 * nb), NOTEC, seen * nb * pulse)
+        glow(a, nx, ny, 34, NOTEC, seen * nb * 0.15)
+
+    # trial flashes: cool on the wrong homes
+    for (tt, px, py) in [(39.5, *TI6), (41.5, *TI6), (46.5, *RE1), (48.5, *RE1)]:
         dd = ts - tt
-        if -0.4 <= dd <= 1.3:
-            al = float(np.interp(dd, [-0.4, 0.15, 0.9, 1.3], [0, 1, 0.65, 0]))
-            sx, sy = staff.note_xy(idx)
-            glow(a, sx, sy, 22 if ok else 18, WARM if ok else COOL, al * (0.85 if ok else 0.5))
-    # the octave fusion: a thread from low Do to high Do while he realises
-    if 52 <= ts <= PLACED + 4:
-        v = smooth(52, 56, ts) * (1 - smooth(PLACED + 2, PLACED + 4, ts))
-        x0, y0 = staff.note_xy(IDX_LO); x1, y1 = staff.note_xy(IDX_HI)
-        for k in range(16):
-            u = k / 15.0
-            glow(a, lerp(x0, x1, u), lerp(y0, y1, u), 4, WARM,
+        if -0.3 <= dd <= 1.2:
+            al = float(np.interp(dd, [-0.3, 0.1, 0.8, 1.2], [0, 1, 0.5, 0]))
+            glow(a, px, py, 18, COOL, al * 0.5)
+
+    # the deepest stone hums; then the fusion thread between it and his note
+    if 58 <= ts <= 66.5:
+        hum = (0.35 + 0.45 * abs(math.sin((ts - 58) * math.pi / 2.0)))
+        glow(a, DO0[0], DO0[1], 16, GOLD, hum * 0.8)
+    if 66.2 <= ts <= PLACED + 1.5:
+        v = smooth(66.2, 67.2, ts) * (1 - smooth(PLACED, PLACED + 1.5, ts))
+        for k in range(12):
+            u = k / 11.0
+            glow(a, lerp(DO0[0], nx, u), lerp(DO0[1], ny, u), 3.5, WARM,
                  v * 0.4 * (0.6 + 0.4 * math.sin(ts * 3 + k)))
 
-    # staff state: all ghost; low Do lights at the octave aha; high Do fills when placed
-    vis = smooth(22, 30, ts)
+    # coda sparks: little lights rise past the staff while the octave sings
+    if 78 <= ts <= 87:
+        cvv = smooth(78, 79.5, ts) * (1 - smooth(85.5, 87, ts))
+        for i in range(8):
+            yy = SY + 5 * LG - ((ts * 26 + i * 41) % (9 * LG))
+            xx = 0.5 * W + fl.bob(ts * 0.7 + i * 2.3, 0.16 * W, f1=0.31, f2=0.77, ph=i)
+            glow(a, xx, yy, 3, WARM, cvv * 0.16)
+
+    # staff: all ghosts; the deepest stone wakes, then both Do's are home
+    vis = smooth(24, 31, ts)
     modes = ["ghost"] * 8; glows = [0.0] * 8
-    if ts >= 52.5:
-        modes[IDX_LO] = "full"
-        glows[IDX_LO] = clamp(1.0 - (ts - 53) / 1.6) * 0.6 + 0.45
-    if placed:
-        modes[IDX_HI] = "full"
-        glows[IDX_HI] = clamp(1.0 - (ts - PLACED) / 1.6) * 0.6 + 0.45
+    if 58 <= ts < 66.5:
+        modes[0] = "empty"
+        glows[0] = 0.35 + 0.45 * abs(math.sin((ts - 58) * math.pi / 2.0))
+    if ts >= 66.5:
+        modes[0] = "full"
+        glows[0] = clamp(1.0 - (ts - 66.5) / 1.6) * 0.55 + 0.4
+    if ts >= PLACED:
+        modes[7] = "full"
+        glows[7] = clamp(1.0 - (ts - PLACED) / 1.6) * 0.55 + 0.4
+    if ts >= 78:                                       # the octave see-saw: low and high trade breaths
+        ph = math.sin(2 * math.pi * (ts - 78) / 1.5)
+        glows[0] = 0.4 + 0.3 * max(0.0, ph)
+        glows[7] = 0.4 + 0.3 * max(0.0, -ph)
     staff.glows_into(a, vis, glows, modes)
 
     im = Image.fromarray(a.clip(0, 255).astype(np.uint8))
-    im.paste(spr, (int(kx - spr.size[0] / 2), int(ky - foot)), spr)
+    im.paste(spr, (int(kx - spr.size[0] / 2), int(FEET - foot)), spr)
     staff.draw(im, vis, modes, glows)
     draw_octave_brace(im, ts)
-    # a small "?" over the staff while he's deciding
-    if 24 <= ts <= 50:
-        qv = np.interp(ts, [24, 26, 48, 50], [0, 1, 1, 0])
-        ImageDraw.Draw(im, "RGBA").text((0.5 * W, SY - 2.9 * LG), "?", font=font(int(2.2 * LG)),
-                                        fill=(236, 224, 200, int(150 * qv)), anchor="mm")
+
+    d = ImageDraw.Draw(im, "RGBA")
+    ring(d, GRASS[0], GRASS[1], 16.2, ts, (255, 224, 175), rmax=30)
+    ring(d, nx, ny, 23.6, ts, (255, 228, 185), rmax=44)
+    ring(d, TI6[0], TI6[1], 39.5, ts, (170, 188, 220), rmax=30)
+    ring(d, RE1[0], RE1[1], 46.5, ts, (170, 188, 220), rmax=30)
+    for t0 in (58.6, 60.6, 62.6):
+        ring(d, DO0[0], DO0[1], t0, ts, (255, 214, 150), rmax=26)
+    ring(d, DO0[0], DO0[1], 66.4, ts, (255, 214, 150), rmax=46)
+    ring(d, DO7[0], DO7[1], PLACED, ts, (255, 214, 150), rmax=56)
+    if 31 <= ts <= 37:
+        qv = np.interp(ts, [31, 32.5, 35.5, 37], [0, 1, 1, 0])
+        d.text((0.5 * W, SY - 3.1 * LG), "?", font=font(int(2.2 * LG)),
+               fill=(236, 224, 200, int(150 * qv)), anchor="mm")
     draw_caption(im, ts)
 
     frame = np.asarray(im, np.float32)
@@ -255,22 +341,72 @@ def build_audio():
     def d(s, at, pan=0.5): add(dL, s * (1 - pan), A + at); add(dR, s * pan, A + at)
     def w(s, at, pan=0.5): add(wL, s * (1 - pan), A + at); add(wR, s * pan, A + at)
 
-    w(pad([midi(48), midi(55), midi(60)], SDUR - 6, 0.04), 4, 0.5)
-    for t in np.arange(2, 14, 1.4): d(softkick(0.09), t, 0.5)              # searching
-    d(piano(midi(72), 4.0, 0.16), 16, 0.5)                                 # his note — high, bright
+    # --- an evolving harmonic bed (the story told in chords) ---
+    w(pad([midi(48), midi(55), midi(60)], 17, 0.045), 3, 0.5)            # C — the nightly round
+    w(pad([midi(45), midi(52), midi(60)], 18, 0.045), 19.5, 0.5)         # Am — wonder
+    w(pad([midi(41), midi(48), midi(57)], 15, 0.045), 36.5, 0.5)         # F — searching
+    w(pad([midi(43), midi(50), midi(55)], 8, 0.032), 51, 0.5)            # G, thin — the doubt
+    w(pad([midi(36), midi(48), midi(55), midi(60)], 13, 0.05), 58, 0.5)  # C low — the answer
+    w(pad([midi(36), midi(48), midi(55), midi(64), midi(72)], 18, 0.05), 70.5, 0.5)  # C full — home
+    w(pad([midi(41), midi(53), midi(57)], 6.5, 0.045), 88.5, 0.5)        # F — the last look back
+    w(pad([midi(36), midi(48), midi(55), midi(60), midi(64)], 12, 0.05), 94.5, 0.5)  # C — rest
 
-    # tests: his note (72), then the slot — a mismatch each time
-    d(piano(midi(72), 1.6, 0.12), 34.0, 0.5); d(piano(midi(64), 2.0, 0.13), 35.2, 0.5)   # vs Mi
-    d(piano(midi(72), 1.6, 0.12), 43.0, 0.5); d(piano(midi(67), 2.0, 0.13), 44.2, 0.5)   # vs Sol
-    # the octave: low Do (60) and his note (72) sounded together -> they fuse
-    d(piano(midi(60), 3.6, 0.15), 52.6, 0.5); d(piano(midi(72), 3.6, 0.15), 52.6, 0.5)
-    w(pad([midi(48), midi(60), midi(72)], 10, 0.05), 53, 0.5)              # octave bloom
-    # placing it home + both Do's ring
-    d(piano(midi(72), 5.0, 0.18), PLACED, 0.5); d(piano(midi(60), 5.0, 0.12), PLACED + 0.1, 0.5)
-    w(pad([midi(48), midi(55), midi(60), midi(72)], 12, 0.055), PLACED, 0.5)
-    w(bass(midi(36), 12, 0.06), PLACED, 0.5)
-    for t in np.arange(91, 100, 1.4): d(softkick(0.09), t, 0.5)            # walking on
-    d(piano(midi(60), 6.0, 0.14), 96, 0.5); d(piano(midi(72), 6.0, 0.10), 96, 0.5)
+    # --- the nightly round: a gentle rocking motif while he walks ---
+    for t in np.arange(2, 12, 1.4): d(softkick(0.09), t, 0.5)
+    for (m, t, amp) in [(60, 3.5, 0.08), (67, 5.0, 0.07), (69, 6.6, 0.06), (67, 8.0, 0.06), (60, 9.6, 0.07)]:
+        d(piano(midi(m), 2.2, amp), t, 0.5)
+
+    # --- discovery: starlight falls; the little light hums ---
+    for i, m in enumerate([91, 88, 84, 79, 76, 72]):
+        d(piano(midi(m), 1.2, 0.05 - 0.004 * i), 16.2 + i * 0.16, 0.5 + 0.04 * (i % 2))
+    d(piano(midi(72), 2.5, 0.10), 17.5, 0.55)
+    # it rings high and bright
+    d(piano(midi(72), 3.5, 0.16), 23.6, 0.5); d(piano(midi(84), 2.5, 0.05), 23.7, 0.55)
+    w(piano(midi(72), 2.0, 0.05), 25.8, 0.5)                             # far echo
+
+    # --- trial one: beside Ti it burns (a half step) ---
+    d(piano(midi(72), 1.8, 0.12), 39.3, 0.55); d(piano(midi(71), 1.8, 0.12), 39.35, 0.45)
+    d(piano(midi(72), 2.0, 0.12), 41.3, 0.55); d(piano(midi(71), 2.0, 0.12), 41.35, 0.45)
+    d(piano(midi(71), 1.4, 0.07), 43.0, 0.45)
+    # --- trial two: above Re it wanders (a seventh) ---
+    d(piano(midi(72), 1.8, 0.11), 46.3, 0.55); d(piano(midi(62), 1.8, 0.11), 46.35, 0.45)
+    for (m, t) in [(62, 48.0), (72, 48.5), (62, 49.0)]:
+        d(piano(midi(m), 1.0, 0.07), t, 0.5)
+
+    # --- the doubt: one thin voice, and air ---
+    d(piano(midi(72), 3.5, 0.07), 52.5, 0.5)
+    d(piano(midi(84), 2.0, 0.035), 55.5, 0.55)
+
+    # --- the answer: the deepest stone hums, and his note replies — call and response ---
+    w(bass(midi(36), 5.0, 0.07), 58.3, 0.5)
+    for (lo, hi, t0, t1, a0, a1) in [(60, 72, 58.6, 59.6, 0.09, 0.06),
+                                     (60, 72, 60.6, 61.5, 0.10, 0.08),
+                                     (60, 72, 62.6, 63.4, 0.11, 0.10)]:
+        d(piano(midi(lo), 2.2, a0), t0, 0.42)
+        d(piano(midi(hi), 2.0, a1), t1, 0.60)
+    # fusion: the two sound as one — the octave
+    d(piano(midi(60), 3.5, 0.14), 66.3, 0.45); d(piano(midi(72), 3.5, 0.14), 66.3, 0.55)
+    for (t, dt) in [(66.5, 0.35), (68.5, 0.35)]:                         # a heartbeat
+        d(softkick(0.10), t, 0.5); d(softkick(0.07), t + dt, 0.5)
+    for i, m in enumerate([48, 60, 64, 67, 72]):                          # a rolled bloom
+        d(piano(midi(m), 2.6, 0.07), 68.3 + i * 0.12, 0.5)
+
+    # --- home: the placement chime ---
+    d(piano(midi(72), 5.0, 0.17), PLACED, 0.5)
+    d(piano(midi(84), 2.5, 0.05), PLACED + 0.1, 0.55)
+    d(piano(midi(60), 4.0, 0.10), PLACED + 0.15, 0.45)
+    w(bass(midi(36), 10, 0.06), PLACED, 0.5)
+
+    # --- coda: the octave see-saw — low and high trading breaths ---
+    for t in np.arange(78, 86, 1.5):
+        d(piano(midi(60), 1.3, 0.075), t, 0.42)
+        d(piano(midi(72), 1.3, 0.075), t + 0.75, 0.58)
+
+    # --- walking on, and rest ---
+    for t in np.arange(92, 102, 1.4): d(softkick(0.09), t, 0.5)
+    d(piano(midi(60), 6.0, 0.13), 96, 0.5); d(piano(midi(67), 6.0, 0.07), 96, 0.5)
+    d(piano(midi(72), 5.0, 0.08), 97.5, 0.5)
+    w(bass(midi(36), 8.0, 0.06), 96, 0.5)
 
     dry = np.stack([reverb(dL, mix=0.45), reverb(dR, mix=0.45)], 1)
     wet = np.stack([reverb(wL, mix=1.0), reverb(wR, mix=1.0)], 1)

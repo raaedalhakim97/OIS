@@ -203,9 +203,9 @@ def story(ts):
     lean = fl.vlean(keeper_x, ts) + fl.idle_sway(ts)       # lean into motion + living sway
     spr, foot, hdx, hdy = character(140, "walk" if walk else "stand", ts, 1,
                                     lift=clamp(lift), lean=lean)
-    kx = keeper_x(ts) + hdx
-    ky = lerp(FEET, KFY, smooth(11, 15, ts)) + hdy
-    glow(a, kx, ky - 0.11 * H, 24, GOLD, 0.92 * (0.9 + 0.1 * math.sin(ts * 2.6)))
+    kx = keeper_x(ts)                                      # body planted; offsets are the lantern's
+    ky = lerp(FEET, KFY, smooth(11, 15, ts))
+    glow(a, kx + hdx, ky + hdy, 22, GOLD, 0.92 * (0.9 + 0.1 * math.sin(ts * 2.6)))
 
     # the two answering lights — each breathing at its own tempo
     seen1 = smooth(14, 18, ts); seen2 = smooth(15, 19, ts)
