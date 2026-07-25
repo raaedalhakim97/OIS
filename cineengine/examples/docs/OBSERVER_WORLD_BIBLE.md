@@ -518,3 +518,23 @@ Close ≈ 0.25–0.35s, hold ≈ 0.1s, open ≈ 0.4–0.5s (opening slower than 
 a real eye). Big story reveals may use a slow half-blink; the Silence may force a
 blink (the eye flinches). This makes every cut feel like the Observer moving its gaze
 — the world is always being watched.
+
+---
+
+## PART X — OBSERVIAN, THE OBSERVER LANGUAGE (canon)
+
+The inhabitants do not speak with letters — they speak with music. Every sentence is
+a melody; every conversation is literally a piece of music. Full spec, phrasebook and
+letter table: **`docs/OBSERVIAN_LANGUAGE.md`**; engine: **`observian.py`**.
+
+The seven sounds: **Do** origin/self · **Re** motion · **Mi** reflection/other ·
+**Fa** question · **Sol** harmony/unity · **La** emotion · **Ti** future/hope.
+Grammar is musical: register (high=urgent, low=wise), rhythm (fast=urgency,
+broken=fear), silence as punctuation, and harmony (note=idea, interval=relationship,
+chord=complete thought). Major=hope, minor=sadness, dissonance=conflict,
+resolution=understanding.
+
+**Production law:** characters never get spoken or written dialogue. The CAPTION
+carries the meaning; the LANTERN SINGS the Observian phrase. Reuse phrases across
+episodes so the audience learns the language by ear without ever being taught —
+*the more you know, the more you observe.*

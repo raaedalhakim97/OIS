@@ -73,6 +73,17 @@ Working set lives flat next to `cineengine/`:
 - Music-as-story codex: piano=Keeper · consonance=belonging · dissonance=tension
   waiting to resolve · accidentals=bridges/outsiders · rest/silence = Ch II's answer.
 
+## Language — Observian (canon)
+The inhabitants speak **music, not letters**: seven sounds (Do origin · Re motion ·
+Mi reflection · Fa question · Sol harmony · La emotion · Ti future) form melodic
+words; grammar is register/rhythm/silence/harmony. Spec + phrasebook:
+`docs/OBSERVIAN_LANGUAGE.md`. Engine: `observian.py` — `say(d, "hello", t)` sings
+Do Mi Sol; styles calm/urgent/fear/confident/whisper; `color="minor"` for sadness;
+`word_melody("HELLO")` translates human words (→ Fa Mi Sol Sol Ti).
+**Law: no spoken/written dialogue ever — captions carry meaning, the lantern sings
+the phrase.** Reused phrases teach the audience the language by ear.
+Demo: `observian_demo.py` → `observian_demo.m4a`.
+
 ## Visual/story standards
 - Captions: centered ~0.50H, serif, 2–3 short lines, lowercase poetry voice.
 - Every episode: title card → story → brand line *"the more you know, the more you
