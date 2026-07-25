@@ -57,6 +57,13 @@
       "episode": "8",
       "title": "The First Note",
       "path": "cineengine/examples/ch1_ep8_the_first_note.mp4"
+    },
+    {
+      "id": "ch1_ep9",
+      "chapter": "I",
+      "episode": "9",
+      "title": "The Second Note",
+      "path": "cineengine/examples/ch1_ep9_the_second_note.mp4"
     }
   ]
 }

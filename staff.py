@@ -79,9 +79,12 @@ def draw(im, vis, modes, glows, yshift_max=26):
     if vis < 0.02: return
     yshift = int((1 - vis) * yshift_max)
     ov = Image.new("RGBA", im.size, (0, 0, 0, 0)); d = ImageDraw.Draw(ov)
-    for k in (-2, -1, 0, 1, 2):                       # five staff lines
+    for idx, k in enumerate((-2, -1, 0, 1, 2)):       # five staff lines, writing in L→R
         yy = SY + k * LG
-        d.line([(SLX, yy), (SRX, yy)], fill=STAFF_COL + (int(150 * vis),), width=2)
+        wp = min(1.0, max(0.0, vis * 1.7 - 0.09 * idx))
+        wp = wp * wp * (3 - 2 * wp)
+        if wp <= 0.01: continue
+        d.line([(SLX, yy), (SLX + (SRX - SLX) * wp, yy)], fill=STAFF_COL + (int(150 * vis),), width=2)
     clef = _CLEF                                       # the sol key
     cw, ch = clef.size
     if vis < 0.995:
@@ -90,21 +93,23 @@ def draw(im, vis, modes, glows, yshift_max=26):
     d.text((SLX + 0.175 * SW, SY - 1.55 * LG), "C", font=CFONT, fill=STAFF_COL + (int(185 * vis),))
     for i in range(8):
         x, y = note_xy(i); mode = modes[i]; lv = glows[i]
+        nv = min(1.0, max(0.0, vis * 1.9 - 0.10 * i))   # notes appear staggered, L→R
+        if nv <= 0.01: continue
         rx, ry = 0.62 * LG, 0.46 * LG
         if mode == "ghost":                            # faint slot, not yet filled
-            d.ellipse([x - rx, y - ry, x + rx, y + ry], outline=GHOST + (int(90 * vis),), width=2)
-            lc = GHOST + (int(110 * vis),)
+            d.ellipse([x - rx, y - ry, x + rx, y + ry], outline=GHOST + (int(90 * nv),), width=2)
+            lc = GHOST + (int(110 * nv),)
         elif mode == "empty":                          # missing note (hollow)
-            d.ellipse([x - rx, y - ry, x + rx, y + ry], outline=(180, 172, 184, int((70 + 120 * lv) * vis)), width=3)
-            lc = (184, 176, 188, int(150 * vis))
+            d.ellipse([x - rx, y - ry, x + rx, y + ry], outline=(180, 172, 184, int((70 + 120 * lv) * nv)), width=3)
+            lc = (184, 176, 188, int(150 * nv))
         else:                                          # full note-head
             if i == 0:                                 # ledger line under low Do
-                d.line([(x - 1.05 * LG, y), (x + 1.05 * LG, y)], fill=STAFF_COL + (int(150 * vis),), width=2)
+                d.line([(x - 1.05 * LG, y), (x + 1.05 * LG, y)], fill=STAFF_COL + (int(150 * nv),), width=2)
             nc = tuple(int(NOTE_COL[j] + (INKGOLD[j] - NOTE_COL[j]) * lv) for j in range(3))
             d.line([(x + rx * 0.85, y - ry * 0.2), (x + rx * 0.85, y - 3.0 * LG)],
-                   fill=nc + (int(200 * vis),), width=max(2, int(0.12 * LG)))
-            d.ellipse([x - rx, y - ry, x + rx, y + ry], fill=nc + (int((180 + 75 * lv) * vis),))
-            lc = (238, 224, 200, int((150 + 100 * lv) * vis))
+                   fill=nc + (int(200 * nv),), width=max(2, int(0.12 * LG)))
+            d.ellipse([x - rx, y - ry, x + rx, y + ry], fill=nc + (int((180 + 75 * lv) * nv),))
+            lc = (238, 224, 200, int((150 + 100 * lv) * nv))
         bb = d.textbbox((0, 0), NAMES[i], font=SOLF)
         d.text((x - (bb[2] - bb[0]) / 2, SY + 3.7 * LG), NAMES[i], font=SOLF, fill=lc)
     if yshift:

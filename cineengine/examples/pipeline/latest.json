@@ -1,10 +1,10 @@
 {
-  "id": "ch1_ep8",
+  "id": "ch1_ep9",
   "chapter": "I",
-  "episode": "8",
-  "title": "The First Note",
+  "episode": "9",
+  "title": "The Second Note",
   "land": "the Home Fields",
-  "caption": "THE OBSERVER WORLD — Chapter I, Episode 8: The First Note. The Keeper has spent his life helping other notes find their place, but he has never had a note of his own. On the turning world he finds one small light — his. The empty sol-key staff appears above him, and he lifts his note up and sets it in the very first slot: Do. Seven more to find, but the song has begun.  the more you know, the more you observe.  #theobserver #animation #ambient #music #solfege #storytelling",
-  "path": "cineengine/examples/ch1_ep8_the_first_note.mp4",
-  "updated": "2026-07-24"
+  "caption": "THE OBSERVER WORLD — Chapter I, Episode 9: The Second Note. Do is home, and the Keeper calls for the second note — but TWO lights answer, almost identical. Which one is Re? The first will not rest on Re's space: it slides between the steps, and against Do it clashes — too close. It is a between-stone: a sharp ♯. The second steps true — Do, Re — a whole step home, a half step between. The sharp bows and slips away, waiting for another song. Two notes found; six more to go. (The hidden lesson: whole steps vs half steps, and what accidentals are.)  the more you know, the more you observe.  #theobserver #animation #ambient #music #solfege #storytelling",
+  "path": "cineengine/examples/ch1_ep9_the_second_note.mp4",
+  "updated": "2026-07-25"
 }
