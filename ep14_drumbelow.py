@@ -182,6 +182,23 @@ DRUM_TOP = DRUM_Y - DRUM_R
 HOL_X = DRUM_X - 0.045 * W                             # it stands ON the heart
 HOL_Y = DRUM_TOP + 26
 
+# ---- THE BIRTH OF THE SHADOW ----
+# it does not fade in. it starts as one point on the heart and swells on every beat,
+# bigger and bigger, until it takes a shape.
+BIRTH_T = 29.2
+BIRTH_N = 6                                            # beats it takes to form
+BIRTH_B = beat_at(BIRTH_T, BIRTH_N + 2)
+def birth_amt(ts):
+    """0 -> 1 in beat-steps, each beat popping bigger then settling."""
+    if not BIRTH_B or ts < BIRTH_B[0]: return 0.0
+    k = 0
+    for i, bt in enumerate(BIRTH_B):
+        if ts >= bt: k = i + 1
+    prog = clamp(k / float(BIRTH_N))
+    q = max(0.0, ts - BIRTH_B[min(k, len(BIRTH_B)) - 1])
+    pop = math.exp(-q * 5.5) * 0.30 * prog             # the swell on each beat
+    return clamp(prog + pop, 0.0, 1.28)
+
 CAPS = [
     (1.4, 5.0, "the world had a heartbeat."),
     (5.8, 8.8, "and it began to stumble."),
@@ -190,9 +207,11 @@ CAPS = [
     (14.4, 18.0, "something was beating\nbetween the beats."),
     (18.6, 21.8, "and the heart\nwas trying to follow."),
     (22.4, 24.4, "come with me."),
-    (25.2, 28.6, "down to the drum below."),
-    (33.4, 37.2, "it stood on the heart\nof the world."),
-    (38.0, 41.6, "striking it out of time."),
+    (25.2, 28.4, "down to the drum below."),
+    (29.4, 31.6, "then the dark gathered —"),
+    (32.0, 34.6, "one point.\nthen bigger. and bigger."),
+    (35.6, 39.0, "it stood on the heart\nof the world."),
+    (39.6, 42.4, "striking it out of time."),
     (43.4, 45.0, "danger!"),
     (46.6, 49.4, "he struck.\nand missed."),
     (49.9, 51.2, "no."),
@@ -395,8 +414,20 @@ def story(ts):
 
     # ---- the Hollow, standing on the heart ----
     gone = smooth(UNISON + 0.4, 118, ts)
-    hseen = smooth(31, 35, ts) * (1 - 0.9 * smooth(118, 130, ts))
+    ba = birth_amt(ts)                                       # it grows out of one point
+    hseen = clamp(ba) * (1 - 0.9 * smooth(118, 130, ts))
     hspr = None
+    if 0.02 < ba < 1.02 and gone < 0.02:                     # THE BIRTH
+        bx = HOL_X; by = HOL_Y - 0.03 * H
+        rr = 6 + 104 * ba
+        darken(a, bx, by, rr, 0.30 + 0.52 * clamp(ba))       # the swelling void
+        glow(a, bx, by, rr * 0.42, [64, 84, 140], 0.10 + 0.16 * clamp(ba))
+        for k in range(10):                                  # a cold rim, breathing outward
+            ang = k * 0.628
+            glow(a, bx + rr * 0.96 * math.cos(ang), by + rr * 0.72 * math.sin(ang),
+                 7, [90, 112, 172], 0.16 * clamp(ba))
+        if ba < 0.14:                                        # the seed: one point
+            glow(a, bx, by, 5, [120, 150, 210], 0.5)
     if hseen > 0.03:
         recoil = 0.0                                            # every landed hit knocks it back
         for (t0, who, hit) in STRIKES:
@@ -404,15 +435,17 @@ def story(ts):
             q = ts - t0
             if 0.45 <= q <= 2.2:
                 recoil += (24 if who != "u" else 90) * math.exp(-(q - 0.45) * 2.4)
+        # ...and only then takes a shape (latched once formed, so it cannot flicker)
+        form = 1.0 if ts >= BIRTH_B[BIRTH_N] else smooth(0.80, 1.02, ba)
         hx = HOL_X + min(recoil, 120) + 190 * gone
         hy = (HOL_Y if gone < 0.02 else lerp(HOL_Y, ground_y(hx), gone)) + fl.bob(ts, 2.0, f1=0.3, f2=0.7)
-        darken(a, hx + 0.05 * W, hy - 0.02 * H, 44, 0.8 * hseen)
-        glow(a, hx + 0.05 * W, hy - 0.02 * H, 12, [70, 92, 152], 0.32 * hseen)
-        darken(a, hx, hy - 0.03 * H, 86, 0.30 * hseen)
-        hspr, hfoot, _, _ = character(150, "stand", 0.0, -1, lean=0.02 * math.sin(ts * 0.6))
-        if hseen < 0.995:
-            al = hspr.getchannel("A").point(lambda v: int(v * hseen)); hspr = hspr.copy(); hspr.putalpha(al)
-        HOLD = (hx, hy, hfoot)
+        if form > 0.02:
+            darken(a, hx + 0.05 * W, hy - 0.02 * H, 44, 0.8 * form)
+            glow(a, hx + 0.05 * W, hy - 0.02 * H, 12, [70, 92, 152], 0.32 * form)
+            darken(a, hx, hy - 0.03 * H, 86, 0.30 * form)
+            hspr, hfoot, _, _ = character(150, "stand", 0.0, -1, lean=0.02 * math.sin(ts * 0.6))
+            al = hspr.getchannel("A").point(lambda v: int(v * form)); hspr = hspr.copy(); hspr.putalpha(al)
+            HOLD = (hx, hy, hfoot)
 
     # ---- the staff: whole and warm, breathing with the heart ----
     vis = smooth(1.0, 4.5, ts)

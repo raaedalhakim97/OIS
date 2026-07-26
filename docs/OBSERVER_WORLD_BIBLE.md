@@ -538,3 +538,17 @@ resolution=understanding.
 carries the meaning; the LANTERN SINGS the Observian phrase. Reuse phrases across
 episodes so the audience learns the language by ear without ever being taught —
 *the more you know, the more you observe.*
+
+---
+
+## PART XI — THE SHADOW'S ARRIVAL (standard)
+
+The Hollow never fades in. It is **born on the beat**: a single dark point appears,
+then swells bigger on **every pulse** of the scene's tempo — each beat popping larger
+with a slight overshoot, a cold rim breathing outward — and only in the last two beats
+does the keeper-shaped silhouette resolve *out of* the mass and take its shape (with the
+void it carries appearing last). Roughly six beats from point to figure.
+
+Why: it arrives in time with the world's own heartbeat — the thing it came to steal —
+and because the growth is beat-driven it re-syncs automatically to any tempo.
+Implemented in `ep14_drumbelow.py` as `birth_amt()`; reuse it for every Hollow entrance.
