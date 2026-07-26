@@ -95,11 +95,15 @@ _theta = ROT * np.concatenate([[0.0], np.cumsum((_rs[1:] + _rs[:-1]) * 0.5 * np.
 def theta_of(ts): return float(np.interp(ts, _tt, _theta))
 def walking(ts): return any(s - 0.4 < ts < e + 0.4 for (s, e) in TURNS)
 
-BLINKS = [(32.5, 0.28, 0.09, 0.42, 1.0),
-          (64.5, 0.26, 0.08, 0.40, 1.0),
-          (100.4, 0.13, 0.04, 0.20, 0.5),    # the unison hit
-          (105.5, 0.28, 0.09, 0.42, 1.0),
-          (131.0, 0.85, 0.30, 1.15, 1.0)]
+BLINKS = [(30.5, 0.26, 0.08, 0.40, 1.0),
+          (49.6, 0.12, 0.03, 0.18, 0.45),    # the miss
+          (64.6, 0.11, 0.03, 0.16, 0.40),    # into the volley
+          (85.2, 0.11, 0.03, 0.16, 0.40),    # into double time
+          (95.0, 0.09, 0.02, 0.14, 0.35),
+          (103.0, 0.09, 0.02, 0.14, 0.35),
+          (107.2, 0.14, 0.05, 0.22, 0.6),    # the unison hit
+          (119.0, 0.28, 0.09, 0.42, 1.0),
+          (132.0, 0.80, 0.28, 1.05, 1.0)]
 
 # ---------------- the world's pulse ----------------
 # a real beat grid: steady, then stumbling (dropped and late beats), then steady again
@@ -137,52 +141,82 @@ def beat_at(n_from, count):
     i = int(np.searchsorted(BEAT_T, n_from))
     return [float(BEAT_T[j]) for j in range(i, min(i + count, len(BEAT_T)))]
 
-COUNT_IN = beat_at(66.0, 8)                            # the Elder counts
-K_HIT = beat_at(70.5, 1)[0]                            # lands (on the beat)
-K_MISS = 48.6                                          # his first strike — off the beat
-S_MISS = 78.4                                          # the sharp's instinct: between
-S_HIT = beat_at(91.5, 1)[0]
-UNISON = beat_at(98.6, 1)[0]
+COUNT_IN = beat_at(50.5, 8)                            # the Elder counts
+K_MISS = 45.1                                          # his first strike — off the beat
+K_HIT = beat_at(58.5, 1)[0]                            # lands (on the beat)
+S_MISS = 78.9                                          # the sharp's instinct: between
+S_HIT = beat_at(83.0, 1)[0]
+UNISON = beat_at(106.0, 1)[0]
+
+# ---------------- THE FIGHT ----------------
+# (t, who, hit) — who: k/e/s strike the drum · h strikes back at them
+def _build_strikes():
+    S = [(K_MISS, "k", False), (K_HIT, "k", True), (S_MISS, "s", False), (S_HIT, "s", True)]
+    order = ["k", "e", "s"]
+    # PHASE B — the volley: they trade blows, one per beat, it answers between
+    for i, t in enumerate(beat_at(62.0, 16)):
+        if t > 78.0: break
+        S.append((t, order[i % 3], True))
+        S.append((t + 0.5 * BEAT, "h", True))
+    # PHASE C — double time: strikes on every beat AND every half beat
+    for i, t in enumerate(beat_at(86.0, 24)):
+        if t > 105.0: break
+        S.append((t, order[i % 3], True))
+        S.append((t + 0.5 * BEAT, order[(i + 2) % 3], True))
+        if i % 2 == 0: S.append((t + 0.25 * BEAT, "h", True))
+    S.append((UNISON, "u", True))                       # the unison finish
+    return sorted(S)
+STRIKES = _build_strikes()
 
 # ---------------- staging ----------------
 def ground_y(x):
     a = math.asin(clamp((x - CX) / R, -1, 1))
     return CY - R * math.cos(a) + SINK
-KX = 0.365 * W; KY = ground_y(KX)
-EX = 0.485 * W; EY = ground_y(EX)
-SHX = 0.585 * W; SHY = ground_y(SHX) - 0.075 * H       # the sharp floats
-DRUM_X = 0.80 * W; DRUM_Y = ground_y(DRUM_X) + 26      # the heart, in the ground
-HOL_X = 0.80 * W; HOL_Y = ground_y(HOL_X) - 18         # standing on it
+KX = 0.235 * W; KY = ground_y(KX)
+EX = 0.345 * W; EY = ground_y(EX)
+SHX = 0.445 * W; SHY = ground_y(SHX) - 0.085 * H       # the sharp floats
+# THE HEART OF THE WORLD — enormous, half-buried, filling the right of the frame
+DRUM_X = 0.755 * W; DRUM_R = 0.315 * W
+DRUM_Y = ground_y(DRUM_X) + DRUM_R * 0.34            # mostly above ground: a huge dome
+DRUM_TOP = DRUM_Y - DRUM_R
+HOL_X = DRUM_X - 0.045 * W                             # it stands ON the heart
+HOL_Y = DRUM_TOP + 26
 
 CAPS = [
     (1.4, 5.0, "the world had a heartbeat."),
-    (5.8, 9.0, "and it began to stumble."),
-    (9.6, 12.0, "do you hear it?"),
-    (12.4, 14.2, "listen."),
-    (14.8, 18.6, "something was beating\nbetween the beats."),
-    (19.2, 22.8, "and the heart\nwas trying to follow."),
-    (23.4, 25.6, "come with me."),
-    (26.4, 30.0, "down to the drum below."),
-    (37.4, 41.4, "it stood on the heart\nof the world."),
-    (42.2, 46.0, "striking it out of time."),
-    (47.6, 49.6, "danger!"),
-    (51.4, 54.6, "he struck.\nand missed."),
-    (55.6, 57.4, "no."),
-    (58.2, 62.0, "not there.\nthere."),
-    (62.6, 65.4, "count.\none — two — three — four."),
-    (69.8, 71.6, "now."),
-    (73.4, 77.0, "on the beat,\nthe light lands."),
-    (80.4, 84.0, "the between-stone lived\nbetween the steps —"),
-    (84.6, 88.0, "but the beat\nhas no between."),
-    (88.6, 90.6, "i cannot."),
-    (91.0, 94.4, "so it learned to count."),
-    (95.4, 97.4, "together."),
-    (98.0, 101.6, "and on the one,\nthey struck together."),
-    (103.2, 106.4, "the heart came back\nto time."),
-    (108.4, 110.4, "thank you."),
-    (116.6, 120.4, "as it went,\nit walked away in time."),
-    (121.2, 124.0, "it had not come\nto break the drum."),
-    (124.6, 128.2, "it had come\nto learn the tempo."),
+    (5.8, 8.8, "and it began to stumble."),
+    (9.4, 11.6, "do you hear it?"),
+    (12.0, 13.8, "listen."),
+    (14.4, 18.0, "something was beating\nbetween the beats."),
+    (18.6, 21.8, "and the heart\nwas trying to follow."),
+    (22.4, 24.4, "come with me."),
+    (25.2, 28.6, "down to the drum below."),
+    (33.4, 37.2, "it stood on the heart\nof the world."),
+    (38.0, 41.6, "striking it out of time."),
+    (43.4, 45.0, "danger!"),
+    (46.6, 49.4, "he struck.\nand missed."),
+    (49.9, 51.2, "no."),
+    (51.6, 54.4, "not there.\nthere."),
+    (54.8, 57.6, "count.\none — two — three — four."),
+    (58.4, 60.0, "now."),
+    (60.6, 63.4, "on the beat,\nthe light lands."),
+    (66.0, 67.6, "again."),
+    (71.0, 72.6, "again!"),
+    (75.4, 78.2, "it struck back\nbetween the beats."),
+    (79.4, 82.4, "the beat\nhas no between."),
+    (82.9, 84.2, "i cannot."),
+    (84.6, 86.2, "listen."),
+    (86.8, 89.4, "so it learned to count."),
+    (91.0, 92.6, "faster."),
+    (96.0, 97.6, "again!"),
+    (100.6, 102.2, "faster!"),
+    (104.4, 105.9, "together."),
+    (106.6, 110.0, "and on the one,\nthey struck as one."),
+    (112.0, 115.2, "the heart came back\nto time."),
+    (117.0, 118.8, "thank you."),
+    (121.6, 124.8, "as it went,\nit walked away in time."),
+    (125.2, 127.6, "it had not come\nto break the drum."),
+    (128.0, 131.0, "it had come\nto learn the tempo."),
 ]
 
 
@@ -280,32 +314,46 @@ def story(ts):
     a += (hp * (10 + 26 * depth)) * np.array([1.0, 0.55, 0.42], np.float32)   # the whole world throbs
     a -= (op * 9) * np.array([1.0, 1.0, 1.0], np.float32)                      # the wrong beat sucks light
 
-    # ---- the drum: the heart of the world ----
-    dseen = smooth(30, 36, ts)
+    # ---- THE DRUM: the heart of the world — an enormous half-buried dome ----
+    dseen = smooth(28, 34, ts)
+    hurt = smooth(36, 60, ts) * (1 - smooth(100, 112, ts))     # it is being struck out of time
     if dseen > 0.02:
-        rad = 52 + 26 * hp
-        glow(a, DRUM_X, DRUM_Y, rad, HEART, dseen * (0.30 + 0.55 * hp))
-        glow(a, DRUM_X, DRUM_Y, rad * 2.4, HEART, dseen * (0.06 + 0.14 * hp))
+        rr = DRUM_R * (1.0 + 0.06 * hp)
+        amt = dseen * (0.55 + 0.45 * hp) * (1 - 0.30 * hurt)
+        x0 = max(0, int(DRUM_X - rr * 1.6)); x1 = min(W, int(DRUM_X + rr * 1.6))
+        y0 = max(0, int(DRUM_Y - rr * 1.6)); y1 = min(H, int(DRUM_Y + rr * 1.6))
+        yg, xg = np.mgrid[y0:y1, x0:x1].astype(np.float32)
+        dist = np.sqrt((xg - DRUM_X) ** 2 + (yg - DRUM_Y) ** 2) / rr
+        body = np.clip(1.0 - dist, 0, 1) ** 0.75                 # the solid mass
+        rim = np.exp(-((dist - 1.0) ** 2) / 0.010) * (0.45 + 0.55 * hp)   # a bright edge
+        halo = np.exp(-((dist - 1.0) ** 2) / 0.28) * 0.32
+        inten = (body * (0.55 + 0.75 * hp) + rim + halo) * amt
+        a[y0:y1, x0:x1] += inten[..., None] * np.array(HEART, np.float32)
+        for k in range(11):                                      # veins of light on the dome
+            ang = -1.25 + k * 0.25
+            glow(a, DRUM_X + rr * 0.78 * math.sin(ang), DRUM_Y - rr * 0.78 * math.cos(ang),
+                 22, [255, 205, 170], dseen * (0.06 + 0.24 * hp))
         if op > 0.05:
-            darken(a, DRUM_X, DRUM_Y, 70, 0.40 * op * dseen)
+            darken(a, DRUM_X, DRUM_TOP + 60, 190, 0.42 * op * dseen)
 
     # ---- the trio ----
     kwalk = walking(ts)
-    klift = (0.55 * smooth(9.0, 9.8, ts) * (1 - smooth(12.2, 13.4, ts))
-             + 0.9 * smooth(K_MISS - 1.0, K_MISS, ts) * (1 - smooth(K_MISS + 2.4, K_MISS + 3.6, ts))
-             + 0.95 * smooth(K_HIT - 1.2, K_HIT, ts) * (1 - smooth(K_HIT + 2.6, K_HIT + 4.0, ts))
-             + 0.95 * smooth(UNISON - 1.4, UNISON, ts) * (1 - smooth(UNISON + 2.4, UNISON + 4.0, ts))
-             + 0.5 * smooth(107.8, 108.6, ts) * (1 - smooth(111, 112.4, ts)))
+    klift = (0.55 * smooth(8.8, 9.6, ts) * (1 - smooth(11.8, 13.0, ts))
+             + 0.9 * smooth(K_MISS - 1.0, K_MISS, ts) * (1 - smooth(K_MISS + 1.8, K_MISS + 2.8, ts))
+             + 0.95 * smooth(57.5, 58.5, ts) * (1 - smooth(78.5, 80, ts))     # fighting
+             + 0.95 * smooth(85.5, 86.5, ts) * (1 - smooth(UNISON + 2, UNISON + 4, ts))
+             + 0.5 * smooth(116.4, 117.2, ts) * (1 - smooth(119.5, 121, ts)))
     kspr, kfoot, kdx, kdy = character(140, "walk" if kwalk else "stand", ts, 1,
                                       lift=clamp(klift), lean=(0.03 if kwalk else 0.0) + fl.idle_sway(ts))
     khx, khy = KX + kdx, KY + kdy
     glow(a, khx, khy, 22, GOLD, 0.88 * (0.86 + 0.14 * hp))
 
-    elift = (0.5 * smooth(11.8, 12.6, ts) * (1 - smooth(14.6, 15.8, ts))
-             + 0.55 * smooth(22.8, 23.6, ts) * (1 - smooth(26, 27.4, ts))
-             + 0.85 * smooth(57.6, 58.6, ts) * (1 - smooth(66, 67.6, ts))     # counting
-             + 0.6 * smooth(87.8, 88.6, ts) * (1 - smooth(92, 93.4, ts))      # counting for the sharp
-             + 0.95 * smooth(UNISON - 1.4, UNISON, ts) * (1 - smooth(UNISON + 2.4, UNISON + 4.0, ts)))
+    elift = (0.5 * smooth(11.4, 12.2, ts) * (1 - smooth(14.2, 15.4, ts))
+             + 0.55 * smooth(21.8, 22.6, ts) * (1 - smooth(25, 26.4, ts))
+             + 0.85 * smooth(50.0, 51.0, ts) * (1 - smooth(58, 59.5, ts))     # counting
+             + 0.95 * smooth(61.5, 62.5, ts) * (1 - smooth(78.5, 80, ts))     # fighting
+             + 0.6 * smooth(84.0, 84.8, ts) * (1 - smooth(87, 88.4, ts))      # counting for the sharp
+             + 0.95 * smooth(85.5, 86.5, ts) * (1 - smooth(UNISON + 2, UNISON + 4, ts)))
     espr, efoot, edx, edy = character(136, "walk" if kwalk else "stand", ts, 1,
                                       lift=clamp(elift), lean=(0.03 if kwalk else 0.0) + fl.idle_sway(ts * 0.9 + 1))
     ehx, ehy = EX + edx, EY + edy
@@ -316,30 +364,48 @@ def story(ts):
     glow(a, shx, shy, 12, LAV, 0.9 * (0.88 + 0.12 * hp))
     glow(a, shx, shy, 30, LAV, 0.16)
 
-    # ---- the strikes ----
-    for (t0, x0, y0, hit, col) in [(K_MISS, khx, khy, False, GOLD),
-                                   (K_HIT, khx, khy, True, GOLD),
-                                   (S_MISS, shx, shy, False, LAV),
-                                   (S_HIT, shx, shy, True, LAV)]:
+    # ---- THE FIGHT: bolts flying both ways ----
+    SRC = {"k": (khx, khy, GOLD), "e": (ehx, ehy, WARM), "s": (shx, shy, LAV)}
+    TGT = (HOL_X, HOL_Y - 0.035 * H)
+    shake = 0.0
+    for (t0, who, hit) in STRIKES:
         q = ts - t0
-        if 0 <= q <= 0.85:
-            bolt(a, x0, y0, DRUM_X, DRUM_Y - 30, fl.ease_out(q / 0.85), hit, col)
-    q = ts - UNISON                                     # the unison: all three at once
-    if 0 <= q <= 1.0:
-        p = fl.ease_out(q / 1.0)
-        for (x0, y0, col) in [(khx, khy, GOLD), (ehx, ehy, WARM), (shx, shy, LAV)]:
-            bolt(a, x0, y0, DRUM_X, DRUM_Y - 30, p, True, col)
-        glow(a, DRUM_X, DRUM_Y - 20, 40 + 60 * p, GOLD, 0.5 * (1 - p))
+        if not (-0.05 <= q <= 0.75): continue
+        p = fl.ease_out(clamp(q / 0.55))
+        if who == "h":                                          # it strikes back, off the beat
+            for (x1, y1, _c) in SRC.values():
+                n = 9
+                for i in range(n):
+                    u = (i / (n - 1)) * p
+                    darken(a, lerp(TGT[0], x1, u), lerp(TGT[1], y1, u) - 0.03 * H * math.sin(math.pi * u),
+                           16, 0.42 * (1 - u * 0.4))
+            if q > 0.5: shake = max(shake, 3.0 * (1 - (q - 0.5) / 0.25))
+        elif who == "u":                                        # the unison
+            for (x0, y0, col) in SRC.values():
+                bolt(a, x0, y0, TGT[0], TGT[1], p, True, col)
+            glow(a, TGT[0], TGT[1], 60 + 150 * p, GOLD, 0.55 * (1 - p))
+            shake = max(shake, 13.0 * (1 - p))
+        else:
+            x0, y0, col = SRC[who]
+            bolt(a, x0, y0, TGT[0], TGT[1], p, hit, col)
+            if hit and q > 0.45:
+                f2 = 1 - (q - 0.45) / 0.30
+                glow(a, TGT[0], TGT[1], 26 + 40 * (1 - f2), col, 0.55 * max(0.0, f2))
+                shake = max(shake, 5.0 * max(0.0, f2))
 
     # ---- the Hollow, standing on the heart ----
-    gone = smooth(100.4, 112, ts)
-    hseen = smooth(33, 37, ts) * (1 - 0.9 * smooth(112, 128, ts))
+    gone = smooth(UNISON + 0.4, 118, ts)
+    hseen = smooth(31, 35, ts) * (1 - 0.9 * smooth(118, 130, ts))
     hspr = None
     if hseen > 0.03:
-        recoil = 26 * (smooth(K_HIT, K_HIT + 0.3, ts) * (1 - smooth(K_HIT + 1.6, K_HIT + 2.6, ts))
-                       + smooth(S_HIT, S_HIT + 0.3, ts) * (1 - smooth(S_HIT + 1.6, S_HIT + 2.6, ts)))
-        hx = HOL_X + recoil + 150 * gone
-        hy = ground_y(hx) - 18 * (1 - gone) + fl.bob(ts, 2.0, f1=0.3, f2=0.7)
+        recoil = 0.0                                            # every landed hit knocks it back
+        for (t0, who, hit) in STRIKES:
+            if who in ("h",) or not hit: continue
+            q = ts - t0
+            if 0.45 <= q <= 2.2:
+                recoil += (24 if who != "u" else 90) * math.exp(-(q - 0.45) * 2.4)
+        hx = HOL_X + min(recoil, 120) + 190 * gone
+        hy = (HOL_Y if gone < 0.02 else lerp(HOL_Y, ground_y(hx), gone)) + fl.bob(ts, 2.0, f1=0.3, f2=0.7)
         darken(a, hx + 0.05 * W, hy - 0.02 * H, 44, 0.8 * hseen)
         glow(a, hx + 0.05 * W, hy - 0.02 * H, 12, [70, 92, 152], 0.32 * hseen)
         darken(a, hx, hy - 0.03 * H, 86, 0.30 * hseen)
@@ -374,6 +440,9 @@ def story(ts):
     frame = fx.bloom(frame, sigma=8, thr=205, gain=0.68)
     frame = fx.vignette(frame, 0.40)
     frame = fx.grain(frame, ts * FPS, amt=0.013)
+    if shake > 0.4:                                             # impact shake
+        dx = int(shake * math.sin(ts * 71)); dy = int(shake * 0.7 * math.sin(ts * 53 + 1))
+        frame = np.roll(np.roll(frame, dy, axis=0), dx, axis=1)
     eye.apply_lids(frame, eye.blink_amount(ts, BLINKS))
     return frame.clip(0, 255).astype(np.uint8)
 
@@ -409,55 +478,61 @@ def build_audio():
         w(bass(midi(29), 0.5, 0.05), t, 0.62)
         d(softkick(0.055), t, 0.62)
 
-    say(d, "do you hear it", 9.6, style="calm", **K)
-    say(d, "listen", 12.4, style="calm", **E)
-    say(d, "come with me", 23.4, style="calm", **E)
-    for t in np.arange(25.5, 32, 1.45): d(softkick(0.06), t, 0.42)             # the descent
-    w(bass(midi(31), 12, 0.05), 26, 0.5)
+    say(d, "do you hear it", 9.4, style="calm", **K)
+    say(d, "listen", 12.0, style="calm", **E)
+    say(d, "come with me", 22.4, style="calm", **E)
+    for t in np.arange(24.5, 30.5, 1.45): d(softkick(0.06), t, 0.42)           # the descent
+    w(bass(midi(31), 12, 0.05), 25, 0.5)
 
-    # the drum revealed
-    d(piano(midi(48), 5.0, 0.08), 34.0, 0.5); w(bass(midi(36), 14, 0.05), 34.0, 0.5)
+    # the drum revealed — huge
+    d(piano(midi(36), 6.0, 0.09), 31.5, 0.5); w(bass(midi(36), 16, 0.06), 31.5, 0.5)
 
-    # his first strike — off the beat, and it misses
-    say(d, "danger", 47.6, style="fear", register=12, pan=0.36)
-    d(piano(midi(72), 1.0, 0.10), K_MISS, 0.40)
-    w(piano(midi(60), 1.6, 0.03), K_MISS + 0.2, 0.5)                           # it fizzles
-    say(d, "no", 55.6, style="calm", **E)
-    say(d, "wait", 57.6, style="calm", **E)
-    # the count: four even Do's, exactly on the pulse
-    for i, t in enumerate(COUNT_IN):
+    say(d, "danger", 43.4, style="fear", register=12, pan=0.36)
+    say(d, "no", 49.9, style="calm", **E)
+    say(d, "wait", 51.6, style="calm", **E)
+    for i, t in enumerate(COUNT_IN):                                           # the count
         d(piano(midi(60 if i % 4 == 0 else 55), 1.2, 0.10 if i % 4 == 0 else 0.06), t, 0.5)
+    say(d, "now", 58.4, style="urgent", **K)
 
-    # on the beat, the light lands
-    say(d, "now", 69.8, style="urgent", **K)
-    d(piano(midi(72), 2.6, 0.15), K_HIT, 0.40)
-    d(softkick(0.13), K_HIT, 0.5); w(pad([midi(48), midi(60)], 3, 0.04), K_HIT, 0.5)
+    # ---- THE FIGHT: a sound for every strike ----
+    VOICE = {"k": (72, 0.36), "e": (67, 0.5), "s": (68, 0.64)}
+    for (t0, who, hit) in STRIKES:
+        if t0 > SDUR: continue
+        if who == "h":                                                         # it strikes back
+            d(softkick(0.085), t0, 0.66); w(bass(midi(29), 0.8, 0.045), t0, 0.68)
+            d(piano(midi(42), 1.0, 0.045), t0, 0.66)
+        elif who == "u":                                                       # the unison
+            for m, pan in [(60, 0.36), (67, 0.5), (72, 0.64)]:
+                d(piano(midi(m), 5.0, 0.155), t0, pan)
+            d(softkick(0.18), t0, 0.5)
+            w(pad([midi(36), midi(48), midi(55), midi(60), midi(67)], 12, 0.055), t0, 0.5)
+        else:
+            m, pan = VOICE[who]
+            if hit:
+                d(piano(midi(m), 1.9, 0.125), t0, pan)
+                d(softkick(0.10), t0, 0.5)
+            else:
+                d(piano(midi(m), 0.9, 0.085), t0, pan)                         # a miss: short, dead
+                w(piano(midi(m - 12), 1.4, 0.025), t0 + 0.2, pan)
+    # the fight's driving pulse — the world beating harder as it goes
+    for t in [b for b in BEAT_T if 62.0 <= b <= 106.0]:
+        d(softkick(0.055 if t < 86 else 0.075), float(t), 0.5)
+    w(bass(midi(36), 20, 0.05), 62.0, 0.5); w(bass(midi(36), 22, 0.055), 86.0, 0.5)
+    w(pad([midi(45), midi(52), midi(57)], 22, 0.035), 62.0, 0.5)
+    w(pad([midi(43), midi(50), midi(55), midi(59)], 20, 0.04), 86.0, 0.5)
 
-    # the sharp's instinct is between — it misses
-    d(piano(midi(68), 1.0, 0.10), S_MISS, 0.64)
-    w(piano(midi(56), 1.6, 0.03), S_MISS + 0.2, 0.64)
-    say(d, "i cannot", 88.6, style="calm", **SH)
-    say(d, "listen", 90.0, style="calm", **E)
-    for i, t in enumerate(beat_at(90.8, 4)):                                   # it counts
-        d(piano(midi(60), 1.0, 0.075), t, 0.5)
-    d(piano(midi(68), 2.6, 0.14), S_HIT, 0.64)                                 # and lands
-    d(softkick(0.12), S_HIT, 0.5)
-
-    # together, on the one
-    say(d, "together", 95.4, style="confident", **K)
-    for m, pan in [(60, 0.36), (67, 0.5), (68, 0.64)]:
-        d(piano(midi(m), 4.6, 0.15), UNISON, pan)
-    d(softkick(0.16), UNISON, 0.5)
-    w(pad([midi(36), midi(48), midi(55), midi(60), midi(67)], 10, 0.05), UNISON, 0.5)
-    say(d, "thank you", 108.4, style="calm", **K)
+    say(d, "i cannot", 82.9, style="calm", **SH)
+    say(d, "listen", 84.6, style="calm", **E)
+    say(d, "together", 104.4, style="confident", **K)
+    say(d, "thank you", 116.9, style="calm", **K)
 
     # the cost: it walks away exactly in time
-    for t in [b for b in BEAT_T if 113.0 <= b <= 127.0][::2]:
+    for t in [b for b in BEAT_T if 121.0 <= b <= 131.0][::2]:
         d(softkick(0.075), float(t), 0.66)
-    w(bass(midi(29), 12, 0.05), 113.0, 0.66)
-    w(piano(midi(84), 3.0, 0.028), 124.5, 0.68)
+    w(bass(midi(29), 12, 0.05), 121.0, 0.66)
+    w(piano(midi(84), 3.0, 0.028), 128.5, 0.68)
     for i, m in enumerate([60, 64, 67]):
-        d(piano(midi(m), 5.0, 0.07), 129.0 + i * 0.2, 0.5)
+        d(piano(midi(m), 5.0, 0.07), 131.5 + i * 0.2, 0.5)
 
     dry = np.stack([reverb(dL, mix=0.45), reverb(dR, mix=0.45)], 1)
     wet = np.stack([reverb(wL, mix=1.0), reverb(wR, mix=1.0)], 1)

@@ -22,14 +22,15 @@ def blink_amount(ts, blinks):
         e = tc + hold + opn                 # fully open again
         if ts < s or ts > e: continue
         if ts < tc:
-            u = (ts - s) / close
+            u = max(0.0, (ts - s) / close)
             v = u * u                       # snaps shut
         elif ts < tc + hold:
             v = 1.0
         else:
-            u = (ts - tc - hold) / opn
+            # clamp before the fractional power: a tiny negative u would go complex
+            u = min(1.0, max(0.0, (ts - tc - hold) / opn))
             v = 1.0 - (u ** 0.7)            # opens slower, eases wide
-        a = max(a, depth * max(0.0, min(1.0, v)))
+        a = max(a, depth * max(0.0, min(1.0, float(v))))
     return a
 
 
