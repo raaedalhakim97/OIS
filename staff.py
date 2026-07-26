@@ -61,7 +61,7 @@ def glows_into(a, vis, glows, modes):
         lv = glows[i]
         if lv <= 0.02: continue
         x, y = note_xy(i)
-        col = COLDC if modes[i] == "fallen" else INKGOLD
+        col = COLDC if modes[i] in ("fallen", "raised") else INKGOLD
         _glow(a, x, y, 12 + 12 * lv, col, (0.25 + 0.95 * lv) * vis)
 
 
@@ -101,12 +101,13 @@ def draw(im, vis, modes, glows, yshift_max=26):
         if mode == "ghost":                            # faint slot, not yet filled
             d.ellipse([x - rx, y - ry, x + rx, y + ry], outline=GHOST + (int(90 * nv),), width=2)
             lc = GHOST + (int(110 * nv),)
-        elif mode == "fallen":                         # flattened: same line, ♭, cold light
+        elif mode in ("fallen", "raised"):              # same stone, two names: ♭ or ♯
+            acc = "♭" if mode == "fallen" else "♯"
             nc = COLDC
             d.line([(x + rx * 0.85, y - ry * 0.2), (x + rx * 0.85, y - 3.0 * LG)],
                    fill=nc + (int(190 * nv),), width=max(2, int(0.12 * LG)))
             d.ellipse([x - rx, y - ry, x + rx, y + ry], fill=nc + (int((170 + 80 * lv) * nv),))
-            d.text((x - 1.35 * LG, y - 0.15 * LG), "♭", font=FLATF,
+            d.text((x - 1.35 * LG, y - 0.15 * LG), acc, font=FLATF,
                    fill=(196, 214, 240, int(225 * nv)), anchor="mm")
             if i == 0:
                 d.line([(x - 1.05 * LG, y), (x + 1.05 * LG, y)], fill=STAFF_COL + (int(150 * nv),), width=2)

@@ -85,6 +85,13 @@
       "episode": "2",
       "title": "The Cold Trail",
       "path": "cineengine/examples/ch2_ep2_the_cold_trail.mp4"
+    },
+    {
+      "id": "ch2_ep3",
+      "chapter": "II",
+      "episode": "3",
+      "title": "The Between-Stone",
+      "path": "cineengine/examples/ch2_ep3_the_between_stone.mp4"
     }
   ]
 }

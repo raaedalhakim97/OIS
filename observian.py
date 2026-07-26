@@ -54,6 +54,12 @@ LEXICON = {
     "let us go": "Re Sol",               # we move in harmony
     "what is it": "Fa Ti",               # question the unknown
     "i am here": "Do Sol",
+    "help us": "Fa Sol",                 # question toward harmony = I ask you for harmony
+    "i cannot": "Do Fa",                 # self meeting doubt
+    "i remember you": "Mi La Do",        # other, memory, self
+    "i was wrong": "Do Fa Sol",          # self, doubt, MOVING to harmony — an apology
+    "rise": "Re Ti",                     # motion toward the future/above
+    "the same": "Mi Mi",
 }
 
 # The Silence does not speak in notes. It answers with a REST — the absence where a
