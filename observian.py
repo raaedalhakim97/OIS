@@ -43,6 +43,17 @@ LEXICON = {
     "wait": "Do Do",                     # remain at the origin
     "i am afraid": "La Fa La",           # feeling, doubt, feeling
     "what now": "Fa Re",                 # question the motion = where do we go
+    "yes": "Sol",                        # agreement IS harmony
+    "no": "Do+Fa",                       # a clash: self against doubt
+    "again": "Re Do Re",
+    "how far": "Fa Re Re",
+    "closer": "Re Do",                   # motion toward here
+    "far": "Re Re Ti",                   # motion, motion, still ahead
+    "do you hear it": "Fa Mi Do",
+    "there": "Re Mi",
+    "let us go": "Re Sol",               # we move in harmony
+    "what is it": "Fa Ti",               # question the unknown
+    "i am here": "Do Sol",
 }
 
 # The Silence does not speak in notes. It answers with a REST — the absence where a
