@@ -92,6 +92,13 @@
       "episode": "3",
       "title": "The Between-Stone",
       "path": "cineengine/examples/ch2_ep3_the_between_stone.mp4"
+    },
+    {
+      "id": "ch2_ep4",
+      "chapter": "II",
+      "episode": "4",
+      "title": "The Drum Below",
+      "path": "cineengine/examples/ch2_ep4_the_drum_below.mp4"
     }
   ]
 }

@@ -60,6 +60,8 @@ LEXICON = {
     "i was wrong": "Do Fa Sol",          # self, doubt, MOVING to harmony — an apology
     "rise": "Re Ti",                     # motion toward the future/above
     "the same": "Mi Mi",
+    "now": "Ti Do",                      # the future arriving at the origin = this instant
+    "together": "Sol Mi",                # harmony with the other
 }
 
 # The Silence does not speak in notes. It answers with a REST — the absence where a
