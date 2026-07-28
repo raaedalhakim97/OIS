@@ -552,3 +552,26 @@ void it carries appearing last). Roughly six beats from point to figure.
 Why: it arrives in time with the world's own heartbeat — the thing it came to steal —
 and because the growth is beat-driven it re-syncs automatically to any tempo.
 Implemented in `ep14_drumbelow.py` as `birth_amt()`; reuse it for every Hollow entrance.
+
+---
+
+## PART XII — CONTINUITY & THE SONGBOOK (standards)
+
+**Continuity law.** Every episode must open where the last one ended: same staging,
+same light levels, same world state. If an episode reveals something about a character
+(e.g. the Elder gave his note away, so his lantern is nearly out), that state **carries
+forward visually into every later episode** until it changes. Bridge the cut with the
+first caption ("the Elder had just told him everything…"), and let blocking change on
+screen (they *give ground* as the enemy advances) rather than jumping between setups.
+
+**The Songbook** (`songbook.py`). Chords are no longer bare stacked triads. A chord is
+voiced like a pianist's hands: a **bass root**, an **open fifth in the tenor** (the
+world's "thread"), the **colour tones close and high**, rolled ~35ms so the notes land
+one after another, with the top voice louder so it sings. Sevenths and ninths are
+available for colour (maj7, m7, 7, add9, m9, maj9, 6, sus).
+
+**The Theme.** The series has one recurring melody — `songbook.THEME` — built from
+material the world already owns: the First Song's rising head (Do Re Mi Sol) and the
+Do–Sol thread, over **C–Am–F–G–C–F–G–C**, with a rest written into the middle of it.
+Use it as the Keeper's leitmotif: quote a fragment in quiet moments, state it whole at
+chapter ends, break it (flatten a note, hollow the harmony) when the world is wounded.
