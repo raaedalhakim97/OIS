@@ -113,6 +113,13 @@
       "episode": "6",
       "title": "The Chord of Three",
       "path": "cineengine/examples/ch2_ep6_the_chord_of_three.mp4"
+    },
+    {
+      "id": "ch2_ep7",
+      "chapter": "II",
+      "episode": "7",
+      "title": "Seven Ways to Stand Together",
+      "path": "cineengine/examples/ch2_ep7_seven_ways.mp4"
     }
   ]
 }

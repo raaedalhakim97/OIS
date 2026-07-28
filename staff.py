@@ -34,6 +34,7 @@ _SER = "/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf"
 _FREESERIF = "/usr/share/fonts/truetype/freefont/FreeSerif.ttf"
 def _f(p, s): return ImageFont.truetype(p, s) if os.path.exists(p) else ImageFont.load_default()
 SOLF = _f(_DEJA, 27); CFONT = _f(_SER, int(2.7 * LG)); FLATF = _f(_DEJA, int(1.7 * LG))
+RESTF = _f(_FREESERIF, int(3.4 * LG))          # 𝄽 — silence, written into the music
 
 
 def note_xy(i):
@@ -98,6 +99,13 @@ def draw(im, vis, modes, glows, yshift_max=26):
         nv = min(1.0, max(0.0, vis * 1.9 - 0.10 * i))   # notes appear staggered, L→R
         if nv <= 0.01: continue
         rx, ry = 0.62 * LG, 0.46 * LG
+        if mode == "rest":                             # a rest: silence, counted in time
+            d.text((x, y - 0.55 * LG), "𝄽", font=RESTF,
+                   fill=(238, 230, 212, int(235 * nv)), anchor="mm")
+            lc = (216, 208, 194, int(170 * nv))
+            bb = d.textbbox((0, 0), NAMES[i], font=SOLF)
+            d.text((x - (bb[2] - bb[0]) / 2, SY + 3.7 * LG), NAMES[i], font=SOLF, fill=lc)
+            continue
         if mode == "ghost":                            # faint slot, not yet filled
             d.ellipse([x - rx, y - ry, x + rx, y + ry], outline=GHOST + (int(90 * nv),), width=2)
             lc = GHOST + (int(110 * nv),)
