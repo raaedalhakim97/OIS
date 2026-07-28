@@ -24,7 +24,7 @@ from observian import say
 W, H = 1080, 1920
 FPS = 24
 TITLE_DUR = 6.0
-SDUR = 138.0
+SDUR = 146.0
 DUR = TITLE_DUR + SDUR
 fx = FX(W, H)
 GOLD = [255, 200, 130]; WARM = [255, 214, 165]; COLD = [150, 176, 214]
@@ -80,13 +80,13 @@ def darken(a, cx, cy, rad, amount):
 for s in ("night", "fading_edge"): pl.build_sky(s); pl.planet_base(s)
 def theta_of(ts): return 0.04 * ts
 
-BLINKS = [(32.6, 0.24, 0.08, 0.38, 1.0),
-          (44.4, 0.11, 0.03, 0.17, 0.42),
-          (62.6, 0.24, 0.08, 0.38, 1.0),
-          (75.4, 0.10, 0.03, 0.16, 0.38),
-          (104.6, 0.24, 0.08, 0.38, 1.0),
-          (121.6, 0.16, 0.06, 0.30, 0.75),    # the Elder goes out
-          (135.0, 0.85, 0.30, 1.10, 1.0)]
+BLINKS = [(38.6, 0.24, 0.08, 0.38, 1.0),
+          (49.8, 0.11, 0.03, 0.17, 0.42),
+          (67.0, 0.24, 0.08, 0.38, 1.0),
+          (79.4, 0.10, 0.03, 0.16, 0.38),
+          (110.6, 0.24, 0.08, 0.38, 1.0),
+          (127.6, 0.16, 0.06, 0.30, 0.75),    # the Elder goes out
+          (141.0, 0.85, 0.30, 1.10, 1.0)]
 
 BEATS = [i * BEAT for i in range(int(SDUR / BEAT) + 2)]
 def beat_at(t0, n=1):
@@ -101,50 +101,54 @@ def ground_y(x):
     a = math.asin(clamp((x - CX) / R, -1, 1))
     return CY - R * math.cos(a) + SINK
 
-KX = 0.255 * W; EX = 0.395 * W; SHX = 0.525 * W
-KY = ground_y(KX); EY = ground_y(EX); SHY = ground_y(SHX) - 0.08 * H
-SUN_X0, SUN_X1 = 1.06 * W, 0.79 * W                  # he walks in, and stops
+# they begin exactly where Ep5 left them — and give ground as he comes on
+def kx_at(ts): return lerp(0.375 * W, 0.255 * W, smooth(4, 18, ts))
+def ex_at(ts): return lerp(0.545 * W, 0.395 * W, smooth(4, 18, ts))
+def shx_at(ts): return lerp(0.665 * W, 0.525 * W, smooth(4, 18, ts))
+SUN_X0, SUN_X1 = 0.98 * W, 0.79 * W                  # he was already at the rim in Ep5
 
 # --- the fight ---
-ONE = beat_at(34.5, 1)[0]                            # a single note: swallowed
-FIFTH0, FIFTH1 = 46.8, 56.0                          # the fifth: raised, then snapped
-CHORD0 = 66.5                                        # the chord: raised
-CHORD_HITS = [b for b in BEATS if 76 <= b <= 100][::2]   # he strikes it, and it holds
-TAKE = 114.0                                          # he takes the Elder
-OUT = 121.0                                           # the Elder's light goes out
-HIS_SONG = [(14.5 + i * 1.25, i) for i in range(6)]   # he sings the First Song, perfectly
+ONE = beat_at(40.0, 1)[0]                            # a single note: swallowed
+FIFTH0, FIFTH1 = 52.0, 61.0                          # the fifth: raised, then snapped
+CHORD0 = 70.0                                        # the chord: raised
+CHORD_HITS = [b for b in BEATS if 80 <= b <= 106][::2]   # he strikes it, and it holds
+TAKE = 120.0                                          # he takes the Elder
+OUT = 127.0                                           # the Elder's light goes out
+HIS_SONG = [(21.5 + i * 1.25, i) for i in range(6)]   # he sings the First Song, perfectly
 
 
 def sunderer_x(ts):
-    return lerp(SUN_X0, SUN_X1, smooth(1.0, 12.0, ts)) + 26 * smooth(100, 104, ts)
+    return lerp(SUN_X0, SUN_X1, smooth(1.0, 9.0, ts)) + 26 * smooth(106, 110, ts)
 
 
 CAPS = [
-    (1.4, 5.2, "the thing they had heard\nwas already here."),
-    (6.0, 9.4, "it did not gather out of the dark\nlike the others."),
-    (10.0, 12.2, "it walked."),
-    (20.0, 22.6, "it sang their song back —"),
-    (23.2, 26.0, "in tune. and in time."),
-    (27.0, 30.4, "the Sunderer."),
-    (34.2, 35.8, "now."),
-    (37.4, 40.6, "the light landed.\nand went out."),
-    (42.0, 44.2, "one note was not enough."),
-    (46.0, 47.6, "together."),
-    (50.0, 52.2, "two, then."),
-    (57.6, 61.4, "he had already\nlearned the thread."),
-    (64.0, 65.6, "together."),
-    (67.0, 69.4, "so they sounded three."),
-    (70.4, 74.4, "three notes, as one voice:\na chord."),
-    (80.4, 84.4, "he could copy a note.\nhe could copy the beat."),
-    (86.2, 88.6, "but a chord is not a sound."),
-    (89.4, 93.4, "it is what happens\nbetween more than one."),
-    (94.6, 97.0, "and he was alone."),
-    (100.8, 103.6, "and for the first time,\nit stepped back."),
-    (106.4, 109.6, "so it did not break the chord."),
-    (110.4, 113.0, "it broke the three."),
-    (117.6, 119.4, "listen."),
-    (126.0, 129.0, "and then there were two."),
-    (129.6, 131.4, "no."),
+    (1.2, 5.0, "the Elder had just told him\neverything."),
+    (5.6, 8.8, "and then the walking stopped."),
+    (9.6, 13.0, "it did not gather out of the dark\nlike the others."),
+    (13.6, 15.8, "it had walked here."),
+    (16.6, 20.2, "and the Elder's light\nwas almost out."),
+    (28.4, 31.0, "it sang their song back —"),
+    (31.6, 34.4, "in tune. and in time."),
+    (35.0, 38.2, "the Sunderer."),
+    (39.6, 41.2, "now."),
+    (43.0, 46.2, "the light landed.\nand went out."),
+    (47.4, 49.8, "one note was not enough."),
+    (51.2, 52.8, "together."),
+    (55.2, 57.4, "two, then."),
+    (62.6, 66.4, "he had already\nlearned the thread."),
+    (67.6, 69.2, "together."),
+    (70.6, 73.0, "so they sounded three."),
+    (74.0, 78.0, "three notes, as one voice:\na chord."),
+    (84.4, 88.4, "he could copy a note.\nhe could copy the beat."),
+    (90.2, 92.6, "but a chord is not a sound."),
+    (93.4, 97.4, "it is what happens\nbetween more than one."),
+    (98.6, 101.0, "and he was alone."),
+    (106.8, 109.6, "and for the first time,\nit stepped back."),
+    (112.4, 115.6, "so it did not break the chord."),
+    (116.4, 119.0, "it broke the three."),
+    (123.6, 125.4, "listen."),
+    (132.0, 135.0, "and then there were two."),
+    (135.6, 137.4, "no."),
 ]
 
 
@@ -164,9 +168,9 @@ def draw_caption(im, ts):
 
 
 def end_card(im, ts):
-    if ts < 132.0: return
+    if ts < 140.0: return
     d = ImageDraw.Draw(im, "RGBA")
-    fade = np.interp(ts, [132.0, 133.0, 134.6, 136.0], [0, 1, 1, 0])
+    fade = np.interp(ts, [140.0, 141.0, 142.6, 144.0], [0, 1, 1, 0])
     for (ln, yy) in [("the more you know,", 0.455), ("the more you observe.", 0.492)]:
         bb = d.textbbox((0, 0), ln, font=FSM); xx = (W - (bb[2] - bb[0])) // 2
         d.text((xx, int(yy * H)), ln, font=FSM, fill=(238, 232, 220, int(235 * fade)))
@@ -183,7 +187,7 @@ def thread(a, p0, p1, amt, col, n=16, w=5):
 
 
 def story(ts):
-    scene = "night" if ts < 60 else "fading_edge"
+    scene = "night" if ts < 66 else "fading_edge"
     a = pl.build_sky(scene).copy()
     base, mask = pl.planet_base(scene)
     a[mask] = base[mask]
@@ -194,26 +198,34 @@ def story(ts):
 
     hp = heart_pulse(ts)
     sx = sunderer_x(ts); sy = ground_y(sx)
-    a *= (1 - 0.16 * smooth(0, 14, ts))
+    a *= (1 - 0.16 * smooth(0, 10, ts))
     darken(a, sx + 0.06 * W, sy - 0.02 * H, 190, 0.40)
 
     # ---- the three ----
+    KX = kx_at(ts); KY = ground_y(KX)                           # they give ground as he comes
+    EX = ex_at(ts); EY = ground_y(EX)
     elder_out = smooth(OUT, OUT + 2.5, ts)
     taken = smooth(TAKE, TAKE + 3.0, ts)
-    kl = (0.9 * smooth(33.6, 34.4, ts) * (1 - smooth(40, 41.5, ts))
+    kl = (0.9 * smooth(39.0, 39.8, ts) * (1 - smooth(45, 46.5, ts))
           + 0.95 * smooth(FIFTH0 - 0.9, FIFTH0, ts) * (1 - smooth(FIFTH1, FIFTH1 + 1.5, ts))
-          + 0.95 * smooth(CHORD0 - 1.0, CHORD0, ts) * (1 - smooth(110, 112, ts))
-          + 0.6 * smooth(129.4, 130.2, ts) * (1 - smooth(133, 134.4, ts)))
+          + 0.95 * smooth(CHORD0 - 1.0, CHORD0, ts) * (1 - smooth(116, 118, ts))
+          + 0.6 * smooth(135.4, 136.2, ts) * (1 - smooth(139, 140.4, ts)))
     kspr, kfoot, kdx, kdy = character(140, "stand", ts, 1, lift=clamp(kl), lean=fl.idle_sway(ts))
     glow(a, KX + kdx, KY + kdy, 22, GOLD, 0.9 * (0.9 + 0.1 * hp))
 
     el = (0.9 * smooth(FIFTH0 - 0.9, FIFTH0, ts) * (1 - smooth(FIFTH1, FIFTH1 + 1.5, ts))
           + 0.95 * smooth(CHORD0 - 1.0, CHORD0, ts) * (1 - smooth(TAKE, TAKE + 1.5, ts))
-          + 0.4 * smooth(117.2, 118.0, ts) * (1 - smooth(120, 121, ts)))
+          + 0.4 * smooth(123.2, 124.0, ts) * (1 - smooth(126, 127, ts)))
     espr, efoot, edx, edy = character(136, "stand", ts, 1, lift=clamp(el), lean=fl.idle_sway(ts * 0.9 + 1))
     ey_off = 0.055 * H * taken                                  # he is lifted / pulled away
-    glow(a, EX + edx, EY + edy - ey_off, 21, WARM, 0.86 * (1 - elder_out) * (0.9 + 0.1 * hp))
+    # CONTINUITY (Ep5): he gave his note away — his light has almost nothing left in it,
+    # and it gutters harder the more he spends holding the fifth and the chord.
+    spent = 1 - 0.30 * (smooth(FIFTH0, FIFTH0 + 2, ts) * (1 - smooth(FIFTH1, FIFTH1 + 2, ts))
+                        + smooth(CHORD0, CHORD0 + 2, ts) * (1 - smooth(TAKE, TAKE + 1, ts)))
+    faint = 0.34 * spent * (0.80 + 0.20 * math.sin(ts * 1.7) * math.sin(ts * 0.9))
+    glow(a, EX + edx, EY + edy - ey_off, 18, WARM, faint * (1 - elder_out) * (0.9 + 0.1 * hp))
 
+    SHX = shx_at(ts); SHY = ground_y(SHX) - 0.08 * H
     shx = SHX + fl.bob(ts, 6, f1=0.5, f2=1.15, ph=0.7)
     shy = SHY + fl.bob(ts, 8, ph=1.9)
     glow(a, shx, shy, 12, LAV, 0.9); glow(a, shx, shy, 30, LAV, 0.16)
@@ -349,23 +361,23 @@ def build_audio():
     def w(s, at, pan=0.5): add(wL, s * (1 - pan), A + at); add(wR, s * pan, A + at)
     K = dict(register=0, pan=0.34); E = dict(register=-12, pan=0.46); SH = dict(register=0, pan=0.58)
 
-    w(pad([midi(44), midi(51), midi(56), midi(59)], 34, 0.04), 1, 0.5)
-    w(bass(midi(30), 20, 0.05), 1, 0.5)
-    for b in [x for x in BEATS if x <= 13]:                        # his footsteps: exactly on the beat
+    w(pad([midi(44), midi(51), midi(56), midi(59)], 42, 0.04), 1, 0.5)
+    w(bass(midi(30), 24, 0.05), 1, 0.5)
+    for b in [x for x in BEATS if x <= 9]:                        # his footsteps: exactly on the beat
         d(softkick(0.10), b, 0.66)
     for (t0, i) in HIS_SONG:                                       # and he sings it perfectly
         d(piano(midi(PITCH[i]), 2.4, 0.115), t0, 0.64)
         w(piano(midi(PITCH[i] - 12), 3.0, 0.04), t0 + 0.04, 0.66)
-    say(d, "who are you", 27.0, style="calm", **E)
+    say(d, "who are you", 35.0, style="calm", **E)
 
     # one note — swallowed
-    say(d, "now", 34.2, style="urgent", **K)
+    say(d, "now", 39.6, style="urgent", **K)
     d(piano(midi(72), 2.0, 0.135), ONE, 0.34)
     w(bass(midi(29), 4.0, 0.05), ONE + 0.6, 0.66)
     d(softkick(0.09), ONE + 0.6, 0.66)
 
     # two — the fifth, and the snap
-    say(d, "together", 46.0, style="confident", **E)
+    say(d, "together", 51.2, style="confident", **E)
     for t in np.arange(FIFTH0, FIFTH1, 3.6):
         d(piano(midi(60), 3.8, 0.13), t, 0.34); d(piano(midi(67), 3.8, 0.12), t + 0.02, 0.5)
         w(pad([midi(48), midi(55)], 3.8, 0.04), t, 0.5)
@@ -375,7 +387,7 @@ def build_audio():
     d(piano(midi(61), 1.4, 0.09), FIFTH1 + 0.1, 0.4)               # the snap: a sour note
 
     # three — THE CHORD
-    say(d, "together", 64.0, style="confident", **SH)
+    say(d, "together", 67.6, style="confident", **SH)
     for t in np.arange(CHORD0, TAKE, 4.2):
         for m, pan in [(60, 0.34), (64, 0.46), (67, 0.58)]:
             d(piano(midi(m), 4.4, 0.115), t, pan)
@@ -388,14 +400,14 @@ def build_audio():
     d(softkick(0.16), TAKE, 0.5); w(bass(midi(28), 10, 0.06), TAKE, 0.6)
     for i, m in enumerate([67, 65, 63, 61, 59]):                   # the Elder's light sliding away
         d(piano(midi(m), 2.2, 0.08 - 0.01 * i), TAKE + 1.0 + i * 0.7, 0.48)
-    say(d, "listen", 117.6, style="whisper", register=-12, pan=0.46)
+    say(d, "listen", 123.6, style="whisper", register=-12, pan=0.46)
     d(piano(midi(48), 6.0, 0.09), OUT, 0.46)
     d(softkick(0.15), OUT, 0.5); w(bass(midi(28), 12, 0.055), OUT, 0.5)
     # and then there were two
-    for t in np.arange(126.0, 133, 3.4):
+    for t in np.arange(132.0, 141, 3.4):
         d(piano(midi(60), 3.2, 0.10), t, 0.36); d(piano(midi(68), 3.2, 0.09), t + 0.02, 0.58)
-    say(d, "no", 129.6, style="urgent", **K)
-    w(pad([midi(44), midi(51), midi(56)], 10, 0.04), 128, 0.5)
+    say(d, "no", 135.6, style="urgent", **K)
+    w(pad([midi(44), midi(51), midi(56)], 12, 0.04), 134, 0.5)
 
     dry = np.stack([reverb(dL, mix=0.45), reverb(dR, mix=0.45)], 1)
     wet = np.stack([reverb(wL, mix=1.0), reverb(wR, mix=1.0)], 1)
