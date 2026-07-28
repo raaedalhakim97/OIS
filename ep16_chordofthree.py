@@ -24,7 +24,7 @@ from observian import say
 W, H = 1080, 1920
 FPS = 24
 TITLE_DUR = 6.0
-SDUR = 146.0
+SDUR = 164.0
 DUR = TITLE_DUR + SDUR
 fx = FX(W, H)
 GOLD = [255, 200, 130]; WARM = [255, 214, 165]; COLD = [150, 176, 214]
@@ -81,12 +81,14 @@ for s in ("night", "fading_edge"): pl.build_sky(s); pl.planet_base(s)
 def theta_of(ts): return 0.04 * ts
 
 BLINKS = [(38.6, 0.24, 0.08, 0.38, 1.0),
-          (49.8, 0.11, 0.03, 0.17, 0.42),
-          (67.0, 0.24, 0.08, 0.38, 1.0),
-          (79.4, 0.10, 0.03, 0.16, 0.38),
-          (110.6, 0.24, 0.08, 0.38, 1.0),
-          (127.6, 0.16, 0.06, 0.30, 0.75),    # the Elder goes out
-          (141.0, 0.85, 0.30, 1.10, 1.0)]
+          (48.0, 0.11, 0.03, 0.17, 0.42),
+          (61.2, 0.10, 0.03, 0.16, 0.40),     # into the volley
+          (72.8, 0.08, 0.02, 0.13, 0.32),
+          (86.6, 0.08, 0.02, 0.13, 0.32),
+          (99.0, 0.22, 0.07, 0.34, 0.95),     # into the chord
+          (131.0, 0.24, 0.08, 0.38, 1.0),
+          (145.6, 0.16, 0.06, 0.30, 0.75),    # the Elder goes out
+          (159.0, 0.85, 0.30, 1.10, 1.0)]
 
 BEATS = [i * BEAT for i in range(int(SDUR / BEAT) + 2)]
 def beat_at(t0, n=1):
@@ -109,16 +111,34 @@ SUN_X0, SUN_X1 = 0.98 * W, 0.79 * W                  # he was already at the rim
 
 # --- the fight ---
 ONE = beat_at(40.0, 1)[0]                            # a single note: swallowed
-FIFTH0, FIFTH1 = 52.0, 61.0                          # the fifth: raised, then snapped
-CHORD0 = 70.0                                        # the chord: raised
-CHORD_HITS = [b for b in BEATS if 80 <= b <= 106][::2]   # he strikes it, and it holds
-TAKE = 120.0                                          # he takes the Elder
-OUT = 127.0                                           # the Elder's light goes out
+FIFTH0, FIFTH1 = 50.0, 57.0                          # the fifth he already knows: snapped
+
+# THE POWER CHORDS — root and fifth, no third between them. a spear, not a shield.
+# Each pair works the first time and fails the second: he learns them one by one,
+# so they have to keep changing weapons.
+VOL_T0, VOL_STEP = 62.0, 2.35
+_PAIRS = [("Fa · Do", [3, 7], 1), ("Sol · Re", [4, 1], 1), ("La · Mi", [5, 2], 1),
+          ("Fa · Do", [3, 7], 0), ("Re · La", [1, 5], 1), ("Mi · Ti", [2, 6], 1),
+          ("Sol · Re", [4, 1], 0), ("Ti · Fa", [6, 3], 1), ("La · Mi", [5, 2], 0),
+          ("Re · La", [1, 5], 0), ("Mi · Ti", [2, 6], 0), ("Ti · Fa", [6, 3], 0)]
+POWER = [(VOL_T0 + i * VOL_STEP, nm, dg, hit) for i, (nm, dg, hit) in enumerate(_PAIRS)]
+VOL_END = POWER[-1][0] + 2.0
+
+CHORD0 = 100.0                                        # three voices: the chord
+CHORD_HITS = [b for b in BEATS if 108 <= b <= 128][::2]   # he strikes it, and it holds
+TAKE = 138.0                                          # he takes the Elder
+OUT = 145.0                                           # the Elder's light goes out
 HIS_SONG = [(21.5 + i * 1.25, i) for i in range(6)]   # he sings the First Song, perfectly
 
 
+def power_at(ts):
+    for (t0, nm, dg, hit) in POWER:
+        if t0 <= ts <= t0 + 1.9: return (t0, nm, dg, hit, (ts - t0) / 1.9)
+    return None
+
+
 def sunderer_x(ts):
-    return lerp(SUN_X0, SUN_X1, smooth(1.0, 9.0, ts)) + 26 * smooth(106, 110, ts)
+    return lerp(SUN_X0, SUN_X1, smooth(1.0, 9.0, ts)) + 26 * smooth(132, 136, ts)
 
 
 CAPS = [
@@ -133,22 +153,31 @@ CAPS = [
     (39.6, 41.2, "now."),
     (43.0, 46.2, "the light landed.\nand went out."),
     (47.4, 49.8, "one note was not enough."),
-    (51.2, 52.8, "together."),
-    (55.2, 57.4, "two, then."),
-    (62.6, 66.4, "he had already\nlearned the thread."),
-    (67.6, 69.2, "together."),
-    (70.6, 73.0, "so they sounded three."),
-    (74.0, 78.0, "three notes, as one voice:\na chord."),
-    (84.4, 88.4, "he could copy a note.\nhe could copy the beat."),
-    (90.2, 92.6, "but a chord is not a sound."),
-    (93.4, 97.4, "it is what happens\nbetween more than one."),
-    (98.6, 101.0, "and he was alone."),
-    (106.8, 109.6, "and for the first time,\nit stepped back."),
-    (112.4, 115.6, "so it did not break the chord."),
-    (116.4, 119.0, "it broke the three."),
-    (123.6, 125.4, "listen."),
-    (132.0, 135.0, "and then there were two."),
-    (135.6, 137.4, "no."),
+    (49.2, 50.8, "together."),
+    (52.0, 54.0, "Do and Sol."),
+    (57.6, 60.4, "he had already\nlearned that pair."),
+    (61.0, 63.0, "so they changed it."),
+    (66.0, 69.4, "two notes, no third between —"),
+    (69.9, 71.6, "a spear."),
+    (74.0, 77.0, "Fa and Do."),
+    (78.6, 81.2, "Sol and Re."),
+    (83.0, 86.4, "every pair\nhad its own edge."),
+    (88.0, 91.0, "and he learned each one."),
+    (92.2, 95.4, "so they threw another.\nand another."),
+    (96.0, 99.0, "until he had learned\nevery pair."),
+    (101.0, 102.6, "together."),
+    (103.4, 105.8, "so they sounded three."),
+    (106.6, 110.6, "three notes, as one voice:\na chord."),
+    (114.0, 118.0, "he could copy a note.\nhe could copy the beat."),
+    (119.6, 122.0, "but a chord is not a sound."),
+    (122.8, 126.8, "it is what happens\nbetween more than one."),
+    (128.0, 130.4, "and he was alone."),
+    (132.4, 135.2, "and for the first time,\nit stepped back."),
+    (137.0, 140.2, "so it did not break the chord."),
+    (141.0, 143.6, "it broke the three."),
+    (146.6, 148.4, "listen."),
+    (152.0, 155.0, "and then there were two."),
+    (155.6, 157.4, "no."),
 ]
 
 
@@ -168,9 +197,9 @@ def draw_caption(im, ts):
 
 
 def end_card(im, ts):
-    if ts < 140.0: return
+    if ts < 158.0: return
     d = ImageDraw.Draw(im, "RGBA")
-    fade = np.interp(ts, [140.0, 141.0, 142.6, 144.0], [0, 1, 1, 0])
+    fade = np.interp(ts, [158.0, 159.0, 160.6, 162.0], [0, 1, 1, 0])
     for (ln, yy) in [("the more you know,", 0.455), ("the more you observe.", 0.492)]:
         bb = d.textbbox((0, 0), ln, font=FSM); xx = (W - (bb[2] - bb[0])) // 2
         d.text((xx, int(yy * H)), ln, font=FSM, fill=(238, 232, 220, int(235 * fade)))
@@ -187,7 +216,7 @@ def thread(a, p0, p1, amt, col, n=16, w=5):
 
 
 def story(ts):
-    scene = "night" if ts < 66 else "fading_edge"
+    scene = "night" if ts < 62 else "fading_edge"
     a = pl.build_sky(scene).copy()
     base, mask = pl.planet_base(scene)
     a[mask] = base[mask]
@@ -261,6 +290,33 @@ def story(ts):
             glow(a, lerp(KP[0], EP_[0], u) + 40 * math.sin(u * 9 + ts * 6),
                  lerp(KP[1], EP_[1], u) + 30 * math.cos(u * 7 + ts * 5), 5, GOLD, 0.35 * b)
 
+    shake = 0.0
+    # ---- THE POWER CHORDS: root and fifth, thrown as spears ----
+    pw = power_at(ts)
+    if pw is not None:
+        t0, nm, dg, hit, u = pw
+        col = GOLD if hit else [126, 132, 148]
+        rise = smooth(0.0, 0.22, u); fly = smooth(0.24, 0.60, u)
+        for k, g in enumerate(dg):                       # the two notes light
+            p0 = SLOT[g]
+            glow(a, p0[0], p0[1], 15 + 8 * rise, col, 0.32 + 0.5 * rise * (1 - smooth(0.8, 1.0, u)))
+        if fly > 0.02:                                   # twin beams: a spear, not a shield
+            src = [(KP[0], KP[1]), (EP_[0], EP_[1])]
+            for k, g in enumerate(dg):
+                p0 = SLOT[g]; s0 = src[k % 2]
+                tip = (lerp(s0[0], sx, fly), lerp(s0[1] - 0.02 * H, sy - 0.05 * H, fly))
+                for i in range(9):
+                    uu = i / 8.0
+                    glow(a, lerp(p0[0], tip[0], 0.35 + 0.65 * uu), lerp(p0[1], tip[1], 0.35 + 0.65 * uu),
+                         5, col, (0.34 if hit else 0.16) * fly)
+        if hit and u > 0.62:
+            b = 1 - (u - 0.62) / 0.38
+            glow(a, sx, sy - 0.05 * H, 26 + 44 * (1 - b), GOLD, 0.5 * b)
+            shake = max(shake, 6.0 * b)
+        if not hit and u > 0.55:                          # he sings the pair back
+            b = smooth(0.55, 0.7, u) * (1 - smooth(0.9, 1.0, u))
+            darken(a, sx + 0.05 * W, sy - 0.04 * H, 52, 0.5 * b)
+
     # ---- three: THE CHORD ----
     ch = smooth(CHORD0, CHORD0 + 1.4, ts) * (1 - smooth(TAKE, TAKE + 1.2, ts))
     if ch > 0.02:
@@ -275,7 +331,6 @@ def story(ts):
         glow(a, cxm, cym, 40 + 40 * hit, GOLD, ch * (0.22 + 0.3 * hit))
         thread(a, (cxm, cym), (sx - 0.045 * W, sy - 0.06 * H), amp * 0.55, GOLD, n=14, w=7)
 
-    shake = 0.0
     for t0 in CHORD_HITS:                                          # he strikes; it holds
         q2 = ts - t0
         if -0.05 <= q2 <= 0.6:
@@ -332,6 +387,14 @@ def story(ts):
     staff.draw(im, vis, modes, glows)
     ImageDraw.Draw(im, "RGBA").text((shx + 28, shy - 24), "♯", font=SHF,
                                     fill=(216, 204, 248, 220), anchor="mm")
+    pwn = power_at(ts)
+    if pwn is not None:                                   # the pair's name
+        t0, nm, dg, hit, u = pwn
+        fade = float(np.interp(u, [0, 0.10, 0.72, 0.92], [0, 1, 1, 0]))
+        col = (255, 214, 150) if hit else (150, 156, 170)
+        d3 = ImageDraw.Draw(im, "RGBA")
+        bb = d3.textbbox((0, 0), nm, font=FSM); xx = (W - (bb[2] - bb[0])) // 2
+        d3.text((xx, int(SY + 5.3 * LG)), nm, font=FSM, fill=col + (int(235 * fade),))
     draw_caption(im, ts)
     end_card(im, ts)
 
@@ -361,7 +424,7 @@ def build_audio():
     def w(s, at, pan=0.5): add(wL, s * (1 - pan), A + at); add(wR, s * pan, A + at)
     K = dict(register=0, pan=0.34); E = dict(register=-12, pan=0.46); SH = dict(register=0, pan=0.58)
 
-    w(pad([midi(44), midi(51), midi(56), midi(59)], 42, 0.04), 1, 0.5)
+    w(pad([midi(44), midi(51), midi(56), midi(59)], 48, 0.04), 1, 0.5)
     w(bass(midi(30), 24, 0.05), 1, 0.5)
     for b in [x for x in BEATS if x <= 9]:                        # his footsteps: exactly on the beat
         d(softkick(0.10), b, 0.66)
@@ -376,18 +439,39 @@ def build_audio():
     w(bass(midi(29), 4.0, 0.05), ONE + 0.6, 0.66)
     d(softkick(0.09), ONE + 0.6, 0.66)
 
-    # two — the fifth, and the snap
-    say(d, "together", 51.2, style="confident", **E)
-    for t in np.arange(FIFTH0, FIFTH1, 3.6):
-        d(piano(midi(60), 3.8, 0.13), t, 0.34); d(piano(midi(67), 3.8, 0.12), t + 0.02, 0.5)
-        w(pad([midi(48), midi(55)], 3.8, 0.04), t, 0.5)
-    d(piano(midi(60), 2.6, 0.11), FIFTH1 - 1.4, 0.64)              # he sings it back
-    d(piano(midi(67), 2.6, 0.11), FIFTH1 - 1.38, 0.68)
+    # two — the fifth he already knows, and the snap
+    say(d, "together", 49.2, style="confident", **E)
+    for t in np.arange(FIFTH0, FIFTH1 - 1, 3.4):
+        d(piano(midi(60), 3.4, 0.13), t, 0.34); d(piano(midi(67), 3.4, 0.12), t + 0.02, 0.5)
+        w(pad([midi(48), midi(55)], 3.4, 0.04), t, 0.5)
+    d(piano(midi(60), 2.4, 0.11), FIFTH1 - 1.4, 0.64)              # he sings it back
+    d(piano(midi(67), 2.4, 0.11), FIFTH1 - 1.38, 0.68)
     d(softkick(0.14), FIFTH1, 0.5); w(bass(midi(28), 6, 0.055), FIFTH1, 0.5)
     d(piano(midi(61), 1.4, 0.09), FIFTH1 + 0.1, 0.4)               # the snap: a sour note
 
+    # THE POWER-CHORD VOLLEY — root and fifth, punched out, weapon after weapon
+    for (t0, nm, dg, hit) in POWER:
+        lo, hi5 = PITCH[dg[0]], PITCH[dg[1]]
+        if hi5 < lo: hi5 += 12
+        if hit:
+            d(piano(midi(lo), 2.2, 0.145), t0, 0.34)               # root
+            d(piano(midi(lo + 7), 2.2, 0.125), t0 + 0.012, 0.44)   # the bare fifth: no third
+            d(piano(midi(lo + 12), 1.8, 0.075), t0 + 0.024, 0.56)  # octave on top: the spear
+            w(bass(midi(lo - 24), 2.4, 0.055), t0, 0.5)
+            d(softkick(0.115), t0 + 0.9, 0.5)
+        else:                                                      # he sings the pair back
+            d(piano(midi(lo), 1.4, 0.09), t0, 0.34)
+            d(piano(midi(lo + 7), 1.4, 0.08), t0 + 0.012, 0.44)
+            d(piano(midi(lo), 1.8, 0.075), t0 + 1.0, 0.66)
+            d(piano(midi(lo + 7), 1.8, 0.07), t0 + 1.01, 0.68)
+            w(bass(midi(29), 2.0, 0.045), t0 + 1.0, 0.66)
+    for b in [x for x in BEATS if VOL_T0 - 1 <= x <= VOL_END]:      # the volley's drive
+        d(softkick(0.06), b, 0.5)
+    w(bass(midi(36), VOL_END - VOL_T0 + 4, 0.05), VOL_T0, 0.5)
+    w(pad([midi(45), midi(52), midi(57)], VOL_END - VOL_T0 + 4, 0.035), VOL_T0, 0.5)
+
     # three — THE CHORD
-    say(d, "together", 67.6, style="confident", **SH)
+    say(d, "together", 101.0, style="confident", **SH)
     for t in np.arange(CHORD0, TAKE, 4.2):
         for m, pan in [(60, 0.34), (64, 0.46), (67, 0.58)]:
             d(piano(midi(m), 4.4, 0.115), t, pan)
@@ -400,14 +484,14 @@ def build_audio():
     d(softkick(0.16), TAKE, 0.5); w(bass(midi(28), 10, 0.06), TAKE, 0.6)
     for i, m in enumerate([67, 65, 63, 61, 59]):                   # the Elder's light sliding away
         d(piano(midi(m), 2.2, 0.08 - 0.01 * i), TAKE + 1.0 + i * 0.7, 0.48)
-    say(d, "listen", 123.6, style="whisper", register=-12, pan=0.46)
+    say(d, "listen", 146.6, style="whisper", register=-12, pan=0.46)
     d(piano(midi(48), 6.0, 0.09), OUT, 0.46)
     d(softkick(0.15), OUT, 0.5); w(bass(midi(28), 12, 0.055), OUT, 0.5)
     # and then there were two
-    for t in np.arange(132.0, 141, 3.4):
+    for t in np.arange(152.0, 160, 3.4):
         d(piano(midi(60), 3.2, 0.10), t, 0.36); d(piano(midi(68), 3.2, 0.09), t + 0.02, 0.58)
-    say(d, "no", 135.6, style="urgent", **K)
-    w(pad([midi(44), midi(51), midi(56)], 12, 0.04), 134, 0.5)
+    say(d, "no", 155.6, style="urgent", **K)
+    w(pad([midi(44), midi(51), midi(56)], 12, 0.04), 152, 0.5)
 
     dry = np.stack([reverb(dL, mix=0.45), reverb(dR, mix=0.45)], 1)
     wet = np.stack([reverb(wL, mix=1.0), reverb(wR, mix=1.0)], 1)
