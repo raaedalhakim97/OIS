@@ -120,6 +120,13 @@
       "episode": "7",
       "title": "Seven Ways to Stand Together",
       "path": "cineengine/examples/ch2_ep7_seven_ways.mp4"
+    },
+    {
+      "id": "ch2_ep8",
+      "chapter": "II",
+      "episode": "8",
+      "title": "The Loudest Quiet",
+      "path": "cineengine/examples/ch2_ep8_the_loudest_quiet.mp4"
     }
   ]
 }
