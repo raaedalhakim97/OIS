@@ -106,6 +106,13 @@
       "episode": "5",
       "title": "The Elder's Truth",
       "path": "cineengine/examples/ch2_ep5_the_elders_truth.mp4"
+    },
+    {
+      "id": "ch2_ep6",
+      "chapter": "II",
+      "episode": "6",
+      "title": "The Chord of Three",
+      "path": "cineengine/examples/ch2_ep6_the_chord_of_three.mp4"
     }
   ]
 }
