@@ -62,6 +62,8 @@ LEXICON = {
     "the same": "Mi Mi",
     "now": "Ti Do",                      # the future arriving at the origin = this instant
     "together": "Sol Mi",                # harmony with the other
+    "i give you this": "Do Mi Sol Ti",   # self, other, harmony, future — a gift forward
+    "it was mine": "Do La Do",           # self, memory, self
 }
 
 # The Silence does not speak in notes. It answers with a REST — the absence where a

@@ -99,6 +99,13 @@
       "episode": "4",
       "title": "The Drum Below",
       "path": "cineengine/examples/ch2_ep4_the_drum_below.mp4"
+    },
+    {
+      "id": "ch2_ep5",
+      "chapter": "II",
+      "episode": "5",
+      "title": "The Elder's Truth",
+      "path": "cineengine/examples/ch2_ep5_the_elders_truth.mp4"
     }
   ]
 }
