@@ -1,0 +1,267 @@
+OBSERVIAN — THE COMPLETE LANGUAGE MATRIX
+THE OBSERVER WORLD  ·  @3theobserver3
+
+43 phrases  ·  7 sounds  ·  5 registers of feeling
+Generated from observian.py, so this is exactly what the characters speak.
+
+==========================================================================
+1 · THE SEVEN SOUNDS
+==========================================================================
+
+Every word in the language is built from these. Do = middle C.
+
+  SOUND   DEGREE  MIDI      HZ   MEANING CORE
+  ----------------------------------------------------------------------
+  Do           0    60   261.6   Origin — self, beginning, existence
+  Re           2    62   293.7   Motion — change, travel
+  Mi           4    64   329.6   Reflection — the other, memory
+  Fa           5    65   349.2   Question — doubt, the unknown
+  Sol          7    67   392.0   Harmony — agreement, connection
+  La           9    69   440.0   Emotion — feeling, grief, love
+  Ti          11    71   493.9   Future — what is coming, tension
+
+==========================================================================
+2 · GRAMMAR — THE FOUR AXES
+==========================================================================
+
+Meaning is not only WHICH notes. It is how they are placed.
+
+  RHYTHM AND FEELING (style)
+    STYLE          NOTE      GAP   LOUD   RHYTHM
+    ------------------------------------------------------------------
+    calm           0.6s     0.3s   0.11   even
+    urgent        0.26s    0.09s   0.12   even
+    fear           0.3s   uneven    0.1   broken — fear will not keep time
+    confident     0.42s    0.16s   0.12   even
+    whisper       0.55s    0.32s  0.055   even
+
+  REGISTER — who is speaking
+    -12   an Elder, or something vast and old
+      0   an ordinary voice
+    +12   excitement, a child, a small note
+
+  COLOUR — hope or grief
+    major   as written
+    minor   Mi and La drop a semitone. Grief bends exactly the two sounds
+            that mean 'the other' and 'feeling'.
+
+  SILENCE
+    A rest is a word. The Silence has no notes of its own, so it answers
+    with absence.
+
+==========================================================================
+3 · CHAPTER I VOCABULARY
+==========================================================================
+
+  hello
+      notes:  Do Mi Sol
+      why:    I recognize your harmony.
+
+  how are you
+      notes:  Fa Mi Sol
+      why:    What is your harmony?
+
+  i am well
+      notes:  Do Sol Do
+      why:    My harmony is complete.
+
+  i
+      notes:  Do
+      why:    the origin, alone
+
+  you and i
+      notes:  Do Mi
+      why:    origin, then the other
+
+  we are connected
+      notes:  Do+Mi+Sol
+      why:    chord = complete thought
+
+  friend
+      notes:  Mi Sol
+      why:    the other, in harmony
+
+  home
+      notes:  Sol Do
+      why:    harmony arriving at the origin
+
+  farewell
+      notes:  Sol Re Ti
+      why:    our harmony moves toward the future
+
+  come with me
+      notes:  Re Re Do
+      why:    motion, motion, toward me
+
+  i am searching
+      notes:  Do Fa Re
+      why:    self, doubt, and moving anyway
+
+  danger
+      notes:  Fa Ti Fa
+      why:    doubt around what is coming
+
+  thank you
+      notes:  Mi La Sol
+      why:    you, feeling, harmony
+
+  the song has begun
+      notes:  Do Re Mi Sol
+      why:    --- Chapter II ---
+
+
+==========================================================================
+4 · CHAPTER II VOCABULARY
+==========================================================================
+
+  listen
+      notes:  Fa Mi
+      why:    question toward the other = attend
+
+  who are you
+      notes:  Fa Do
+      why:    question the origin
+
+  something is wrong
+      notes:  Fa Sol Fa
+      why:    the harmony is in question
+
+  the song is broken
+      notes:  Do Re Mi Fa
+      why:    "the song has begun" with harmony -> doubt
+
+  i hear you
+      notes:  Mi Do Sol
+      why:    you reach my harmony
+
+  wait
+      notes:  Do Do
+      why:    remain at the origin
+
+  i am afraid
+      notes:  La Fa La
+      why:    feeling, doubt, feeling
+
+  what now
+      notes:  Fa Re
+      why:    question the motion = where do we go
+
+  yes
+      notes:  Sol
+      why:    agreement IS harmony
+
+  no
+      notes:  Do+Fa
+      why:    a clash: self against doubt
+
+  again
+      notes:  Re Do Re
+      why:    motion returning to the origin, and out again
+
+  how far
+      notes:  Fa Re Re
+      why:    question the motion, twice — distance
+
+  closer
+      notes:  Re Do
+      why:    motion toward here
+
+  far
+      notes:  Re Re Ti
+      why:    motion, motion, still ahead
+
+  do you hear it
+      notes:  Fa Mi Do
+      why:    question toward the other, about me
+
+  there
+      notes:  Re Mi
+      why:    motion toward the other — pointing
+
+  let us go
+      notes:  Re Sol
+      why:    we move in harmony
+
+  what is it
+      notes:  Fa Ti
+      why:    question the unknown
+
+  i am here
+      notes:  Do Sol
+      why:    the origin, in harmony — I am, and I am well
+
+  help us
+      notes:  Fa Sol
+      why:    question toward harmony = I ask you for harmony
+
+  i cannot
+      notes:  Do Fa
+      why:    self meeting doubt
+
+  i remember you
+      notes:  Mi La Do
+      why:    other, memory, self
+
+  i was wrong
+      notes:  Do Fa Sol
+      why:    self, doubt, MOVING to harmony — an apology
+
+  rise
+      notes:  Re Ti
+      why:    motion toward the future/above
+
+  the same
+      notes:  Mi Mi
+      why:    the other, twice — an echo, not an answer
+
+  now
+      notes:  Ti Do
+      why:    the future arriving at the origin = this instant
+
+  together
+      notes:  Sol Mi
+      why:    harmony with the other
+
+  i give you this
+      notes:  Do Mi Sol Ti
+      why:    self, other, harmony, future — a gift forward
+
+  it was mine
+      notes:  Do La Do
+      why:    self, memory, self
+
+
+==========================================================================
+5 · READING THE GRAMMAR
+==========================================================================
+
+  - "i was wrong" = Do Fa Sol — self, then doubt, then MOVING INTO
+    harmony. An apology is a journey, and the language makes you walk
+    it.
+
+  - "no" = Do+Fa — self and doubt sounded TOGETHER, as a clash.
+    Disagreement is dissonance, not a word.
+
+  - "we are connected" = Do+Mi+Sol — self, other and harmony at once. A
+    complete thought is a chord.
+
+  - "the same" = Mi Mi — the other, twice. The Silence's favourite
+    sentence: an echo is not an answer.
+
+
+==========================================================================
+6 · PRODUCTION RULE
+==========================================================================
+
+  Captions carry the meaning. Observian carries the speech. Characters
+  never get written dialogue — the lantern sings, the caption
+  translates. Recurring phrases repeat until the audience knows them
+  without being told.
+
+  In the trailers this became call and response: Alan speaks, and the
+  world answers in Observian. That is the premise demonstrated rather
+  than described.
+
+==========================================================================
+the more you know, the more you observe.
+==========================================================================
