@@ -3,6 +3,27 @@
   "branch": "claude/extract-create-new-repo-evr0vz",
   "episodes": [
     {
+      "id": "tr3_dark",
+      "chapter": "—",
+      "episode": "trailer",
+      "title": "The Listening Dark (trailer)",
+      "path": "cineengine/examples/trailer3_the_listening_dark.mp4"
+    },
+    {
+      "id": "tr2_lessons",
+      "chapter": "—",
+      "episode": "trailer",
+      "title": "The Lessons (trailer)",
+      "path": "cineengine/examples/trailer2_the_lessons.mp4"
+    },
+    {
+      "id": "tr1_world",
+      "chapter": "—",
+      "episode": "trailer",
+      "title": "THE OBSERVER WORLD (trailer)",
+      "path": "cineengine/examples/trailer1_the_world.mp4"
+    },
+    {
       "id": "ch1_prologue",
       "chapter": "I",
       "episode": "0",
