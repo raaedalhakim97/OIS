@@ -23,16 +23,16 @@ LEXICON = {
     "hello": "Do Mi Sol",                # I recognize your harmony.
     "how are you": "Fa Mi Sol",          # What is your harmony?
     "i am well": "Do Sol Do",            # My harmony is complete.
-    "i": "Do",
-    "you and i": "Do Mi",
+    "i": "Do",                           # the origin, alone
+    "you and i": "Do Mi",                # origin, then the other
     "we are connected": "Do+Mi+Sol",     # chord = complete thought
-    "friend": "Mi Sol",
-    "home": "Sol Do",
+    "friend": "Mi Sol",                  # the other, in harmony
+    "home": "Sol Do",                    # harmony arriving at the origin
     "farewell": "Sol Re Ti",             # our harmony moves toward the future
-    "come with me": "Re Re Do",
-    "i am searching": "Do Fa Re",
-    "danger": "Fa Ti Fa",
-    "thank you": "Mi La Sol",
+    "come with me": "Re Re Do",          # motion, motion, toward me
+    "i am searching": "Do Fa Re",        # self, doubt, and moving anyway
+    "danger": "Fa Ti Fa",                # doubt around what is coming
+    "thank you": "Mi La Sol",            # you, feeling, harmony
     "the song has begun": "Do Re Mi Sol",
     # --- Chapter II ---
     "listen": "Fa Mi",                   # question toward the other = attend
@@ -45,21 +45,21 @@ LEXICON = {
     "what now": "Fa Re",                 # question the motion = where do we go
     "yes": "Sol",                        # agreement IS harmony
     "no": "Do+Fa",                       # a clash: self against doubt
-    "again": "Re Do Re",
-    "how far": "Fa Re Re",
+    "again": "Re Do Re",                 # motion returning to the origin, and out again
+    "how far": "Fa Re Re",               # question the motion, twice — distance
     "closer": "Re Do",                   # motion toward here
     "far": "Re Re Ti",                   # motion, motion, still ahead
-    "do you hear it": "Fa Mi Do",
-    "there": "Re Mi",
+    "do you hear it": "Fa Mi Do",        # question toward the other, about me
+    "there": "Re Mi",                    # motion toward the other — pointing
     "let us go": "Re Sol",               # we move in harmony
     "what is it": "Fa Ti",               # question the unknown
-    "i am here": "Do Sol",
+    "i am here": "Do Sol",               # the origin, in harmony — I am, and I am well
     "help us": "Fa Sol",                 # question toward harmony = I ask you for harmony
     "i cannot": "Do Fa",                 # self meeting doubt
     "i remember you": "Mi La Do",        # other, memory, self
     "i was wrong": "Do Fa Sol",          # self, doubt, MOVING to harmony — an apology
     "rise": "Re Ti",                     # motion toward the future/above
-    "the same": "Mi Mi",
+    "the same": "Mi Mi",                 # the other, twice — an echo, not an answer
     "now": "Ti Do",                      # the future arriving at the origin = this instant
     "together": "Sol Mi",                # harmony with the other
     "i give you this": "Do Mi Sol Ti",   # self, other, harmony, future — a gift forward

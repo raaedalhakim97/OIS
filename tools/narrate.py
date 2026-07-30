@@ -87,7 +87,8 @@ LINES = {
     "ch2_ep5":  "An elder tells the truth, and every hidden thing is finally named.",
     "ch2_ep6":  "A root and a fifth is a power chord. Add a third and it becomes a triad.",
     "ch2_ep7":  "Seven notes make seven chords. One for every degree of the scale.",
-    "ch2_ep8":  "Silence is not the end of music. It is written in. It is a rest.",
+    "ch2_ep8":  "What is the harmonic series? Every note has other notes inside it.",
+    "ch2_ep10": "Silence is not the end of music. It is written in. It is a rest.",
 }
 
 
@@ -115,8 +116,12 @@ MODULES = {
     "ch2_ep5":  "ep15_elderstruth.py",
     "ch2_ep6":  "ep16_chordofthree.py",
     "ch2_ep7":  "ep17_sevenways.py",
-    "ch2_ep8":  "ep18_loudestquiet.py",
+    "ch2_ep10": "ep18_loudestquiet.py",
 }
+
+# ch2_ep8 is deliberately absent above. It bakes its own narration in ep19_voiceinside.py,
+# because the Keeper reacts to a specific line at a specific moment; adding a second pass
+# here would double the voice.
 
 
 # ── the trailers: Alan and the world, taking turns ───────────────────────────────

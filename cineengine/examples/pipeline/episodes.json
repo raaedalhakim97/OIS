@@ -4,21 +4,21 @@
   "episodes": [
     {
       "id": "tr3_dark",
-      "chapter": "—",
+      "chapter": "\u2014",
       "episode": "trailer",
       "title": "The Listening Dark (trailer)",
       "path": "cineengine/examples/trailer3_the_listening_dark.mp4"
     },
     {
       "id": "tr2_lessons",
-      "chapter": "—",
+      "chapter": "\u2014",
       "episode": "trailer",
       "title": "The Lessons (trailer)",
       "path": "cineengine/examples/trailer2_the_lessons.mp4"
     },
     {
       "id": "tr1_world",
-      "chapter": "—",
+      "chapter": "\u2014",
       "episode": "trailer",
       "title": "THE OBSERVER WORLD (trailer)",
       "path": "cineengine/examples/trailer1_the_world.mp4"
@@ -146,8 +146,15 @@
       "id": "ch2_ep8",
       "chapter": "II",
       "episode": "8",
+      "title": "The Voice Inside the Note",
+      "path": "cineengine/examples/ch2_ep8_the_voice_inside_the_note.mp4"
+    },
+    {
+      "id": "ch2_ep10",
+      "chapter": "II",
+      "episode": "10",
       "title": "The Loudest Quiet",
-      "path": "cineengine/examples/ch2_ep8_the_loudest_quiet.mp4"
+      "path": "cineengine/examples/ch2_ep10_the_loudest_quiet.mp4"
     }
   ]
 }
