@@ -39,17 +39,39 @@ the story text follow. Story second, keyword first.
 
 ---
 
+## Captions vs. the spoken track — don't say the same thing twice
+The trailers now speak. Alan names concepts out loud, so those words are already in the
+transcript that TikTok indexes. That changes what the caption is for.
+
+**The caption should cover the queries the transcript does not.** Alan says the nouns
+("the octave", "chords"); people search the question forms ("what is an octave",
+"how to read sheet music", "music theory for beginners"). Put the nouns in the video and
+the questions in the caption, and one upload covers both shapes of the same search.
+
+Repeating the spoken words in the caption is the one thing to avoid: it adds no new query
+coverage and reads as stuffing, which is penalised rather than rewarded.
+
+| Trailer | Already spoken (transcript) | So the caption carries |
+|---|---|---|
+| The Lessons | scale, octave, half steps, beat, chords, silence | *learn music theory*, *music theory for beginners*, *how to read sheet music* |
+| The World | note, harmonise | *animated series*, *every soul is a note*, *what is harmony* |
+| The Listening Dark | pitch, time, chord | *dark animation*, *original series*, *music theory story* |
+
 ## Pinned trailers (pin all three, in this order)
 
 ### Pin 1 — `trailer2_the_lessons.mp4` (0:27)
 This one goes first because it is the *searchable* trailer — it shows the notation.
 
-> **Learn music theory without a lesson — a whole animated series
-> hidden inside a story.** Scale, octave, half steps, the beat, chords,
-> the rest. Every soul is a note. Start at Chapter I. 🕯️
+> **Learn music theory without a lesson — music theory for beginners,
+> told as a story.** Six ideas in 27 seconds, and you won't notice you
+> were taught. Start at Chapter I. 🕯️
 > the more you know, the more you observe
 >
-> `#musictheory #learnmusic #solfege #musictheoryforbeginners #theobserverworld`
+> `#musictheory #learnmusic #musictheoryforbeginners #musiceducation #theobserverworld`
+
+Note what this caption does *not* do: it never lists "scale, octave, chords". Alan says
+those out loud, so the caption spends its room on *learn music theory* and *music theory
+for beginners* instead — two more queries, same 27 seconds of video.
 
 **Title/on-screen text overlay to add if you re-edit:** `MUSIC THEORY, AS A STORY`
 
