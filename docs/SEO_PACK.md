@@ -1,12 +1,28 @@
 # THE OBSERVER WORLD — TikTok SEO Pack
 Channel: **@3theobserver3** — "the more you know, the more you observe"
 
-## How TikTok search actually ranks this
+## The biggest problem, first
+**Our episodes contain no spoken words, and spoken audio is a top-tier ranking signal.**
+TikTok transcribes video audio and treats that transcript as indexable text. A series
+whose characters speak Observian forfeits the strongest lever on the platform. Nothing
+else in this document matters as much as closing that gap.
+
+Two fixes that do not break the language rule — the characters still never speak letters,
+because the voice belongs to the **Observer**, who watches and names things:
+
+- **Upload-time TTS (do this now, no re-render).** In the TikTok editor add a text sticker
+  with the episode's question, tap text-to-speech, place it ~1s in, and hide the sticker
+  behind the title card. TikTok transcribes its own TTS, so the keyword lands in the
+  transcript for free.
+- **Rendered Observer narration (Chapter III onward).** One sentence, three seconds, top
+  of episode, Observer's voice only. Costs a re-render of the back catalogue, so it is
+  worth doing for new episodes and back-filling only the two best search assets (Ep 8,
+  Ep 10).
+
+## How TikTok search ranks this
 TikTok is a search engine now, but it does not index the way Google does. It indexes:
 
-1. **Spoken words / auto-captions.** The single strongest signal. Our episodes have no
-   speech — they speak Observian. So the searchable words have to come from somewhere
-   else, which makes 2 and 3 unusually important for us.
+1. **Spoken words / auto-captions.** The strongest text signal — see above.
 2. **On-screen text.** TikTok OCRs the frame. Our title cards and the staff labels
    (`Do Re Mi Fa Sol La Ti`, `OCTAVE`, `POWER CHORD`, `A REST`) are already doing SEO
    work. Keep them.
@@ -119,6 +135,29 @@ but each still carries one keyword, because the theory never stopped.
 - **One hashtag is branded and non-negotiable:** `#theobserverworld`. It's the only
   hashtag you can ever own outright.
 - **Reply to comments with the next episode's question.** Comment text is indexed too.
+
+## Getting real keyword data for free — `tools/keywords.py`
+Ahrefs' keyword endpoints are plan-gated, but public **autocomplete is not**, and it needs
+no key. `tools/keywords.py` harvests Google, YouTube and TikTok suggestions for a set of
+seeds and ranks terms by how many different seeds surfaced them.
+
+```
+python3 tools/keywords.py                     # the series' default seeds
+python3 tools/keywords.py --source youtube    # video intent — closest free proxy to TikTok
+python3 tools/keywords.py --depth 2 --json    # expand a level, machine-readable
+```
+
+Autocomplete is arguably *better* than web search volume here: the suggestions are the
+phrases people actually type, whereas Ahrefs volume describes Google web behaviour, not
+TikTok behaviour.
+
+**Run it on your own machine, not in the render container** — the container's egress policy
+denies google.com and tiktok.com (verified: 403 on CONNECT), so it will correctly report
+that nothing came back.
+
+Cloning an off-the-shelf scraper (pytrends and friends) was considered and rejected: they
+clone fine and then fail on the same blocked hosts, and they break whenever Google changes
+a URL. Ninety lines we control beats a dependency we don't.
 
 ## What's still missing (needs an Ahrefs API plan)
 Real search-volume numbers per keyword, keyword difficulty, and TikTok/social metrics
