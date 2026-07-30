@@ -17,7 +17,7 @@ costs no render time and no visual quality.
     python3 tools/narrate.py --sample                 # voice options -> one mp3, pick one
     python3 tools/narrate.py --episode ch1_ep8        # one episode
     python3 tools/narrate.py --all                    # every episode with a line
-    python3 tools/narrate.py --all --voice deep --at 1.2
+    python3 tools/narrate.py --all --voice ryan --at 1.2
 """
 import argparse
 import json
@@ -38,13 +38,28 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 EX = os.path.join(ROOT, "cineengine", "examples")
 PIPE = os.path.join(EX, "pipeline", "episodes.json")
 
-# espeak-ng presets. Lower pitch and a slower rate both help TikTok's transcriber
-# and make the voice sound like an observer rather than a narrator on a schedule.
-VOICES = {
-    "observer": dict(v="en-gb-x-rp", s=136, p=24, g=9, a=195),   # default: RP, low, spaced
-    "deep":     dict(v="en-gb",      s=128, p=12, g=11, a=200),  # heavier, slower
-    "clear":    dict(v="en-us",      s=150, p=35, g=6,  a=195),  # most intelligible
+# Neural voices (piper). These are real recorded-voice models, not formant synthesis —
+# espeak sounds like a machine reading, which is wrong for a watcher. length_scale > 1
+# slows delivery, which suits the Observer and helps TikTok's transcriber.
+#
+# The models live on GitHub releases rather than HuggingFace on purpose: HF is blocked by
+# the render container's egress policy, and these mirrors are not.
+REL = "https://github.com/rhasspy/piper/releases/download/v0.0.2"
+PIPER = {
+    "alan":  ("en-gb-alan-low.onnx",     f"{REL}/voice-en-gb-alan-low.tar.gz",     1.18),
+    "ryan":  ("en-us-ryan-high.onnx",    f"{REL}/voice-en-us-ryan-high.tar.gz",    1.15),
+    "amy":   ("en-us-amy-low.onnx",      f"{REL}/voice-en-us-amy-low.tar.gz",      1.15),
+    "libri": ("en-us-libritts-high.onnx", f"{REL}/voice-en-us-libritts-high.tar.gz", 1.12),
 }
+
+# espeak-ng fallbacks, kept only for machines with no model cache and no network.
+ESPEAK = {
+    "espeak-gb": dict(v="en-gb-x-rp", s=136, p=24, g=9, a=195),
+    "espeak-us": dict(v="en-us",      s=150, p=35, g=6, a=195),
+}
+VOICES = list(PIPER) + list(ESPEAK)
+VOICE_DIR = os.environ.get("OBSERVER_VOICES",
+                           os.path.join(os.path.expanduser("~"), ".cache", "observer-voices"))
 
 # One line per episode: the searchable question first, then the story's own words.
 # Keep them short — under ~5 seconds — so they land before the title card clears.
@@ -79,35 +94,86 @@ def run(cmd, **kw):
     return subprocess.run(cmd, check=True, capture_output=True, **kw)
 
 
-def speak(text, voice="observer"):
-    """espeak-ng -> float32 mono at SR."""
-    p = VOICES[voice]
-    with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as f:
-        raw = f.name
-    try:
-        run(["espeak-ng", "-v", p["v"], "-s", str(p["s"]), "-p", str(p["p"]),
-             "-g", str(p["g"]), "-a", str(p["a"]), "-w", raw, text])
-        out = run([FFMPEG, "-v", "error", "-i", raw, "-ac", "1", "-ar", str(SR),
-                   "-f", "f32le", "-"]).stdout
-    finally:
-        os.unlink(raw)
+def to_mono(path):
+    """Read any wav as float32 mono, resampled to the world's rate."""
+    out = run([FFMPEG, "-v", "error", "-i", path, "-ac", "1", "-ar", str(SR),
+               "-f", "f32le", "-"]).stdout
     return np.frombuffer(out, np.float32).copy()
 
 
-def shape(x, room=0.30):
-    """Make it the Observer: trim the mud, soften the edge, set it back in the room."""
+def ensure_model(voice):
+    """Fetch and unpack a piper voice on first use. Returns the .onnx path."""
+    fn, url, _ = PIPER[voice]
+    dst = os.path.join(VOICE_DIR, fn)
+    if os.path.exists(dst):
+        return dst
+    os.makedirs(VOICE_DIR, exist_ok=True)
+    print(f"  … fetching the {voice} voice model (one time)")
+    tgz = os.path.join(VOICE_DIR, f"{voice}.tar.gz")
+    run(["curl", "-sL", "--max-time", "300", "-o", tgz, url])
+    run(["tar", "xzf", tgz, "-C", VOICE_DIR])
+    os.unlink(tgz)
+    if not os.path.exists(dst):
+        raise SystemExit(f"unpacked {voice} but {fn} is not there")
+    return dst
+
+
+_LOADED = {}
+
+
+def speak(text, voice="alan"):
+    """Synthesize one line -> float32 mono at SR."""
+    if voice in ESPEAK:
+        p = ESPEAK[voice]
+        with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as f:
+            raw = f.name
+        try:
+            run(["espeak-ng", "-v", p["v"], "-s", str(p["s"]), "-p", str(p["p"]),
+                 "-g", str(p["g"]), "-a", str(p["a"]), "-w", raw, text])
+            return to_mono(raw)
+        finally:
+            os.unlink(raw)
+
+    from piper import PiperVoice, SynthesisConfig
+    if voice not in _LOADED:
+        _LOADED[voice] = PiperVoice.load(ensure_model(voice))
+    cfg = SynthesisConfig(length_scale=PIPER[voice][2], noise_scale=0.60,
+                          noise_w_scale=0.75, normalize_audio=True)
+    with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as f:
+        raw = f.name
+    try:
+        import wave
+        with wave.open(raw, "wb") as w:
+            _LOADED[voice].synthesize_wav(text, w, syn_config=cfg)
+        return to_mono(raw)
+    finally:
+        os.unlink(raw)
+
+
+def shape(x, room=0.26, soften=0.0):
+    """Make it the Observer: trim the rumble, set it back in the room.
+
+    A neural voice needs no smoothing — it is already a real voice, and blurring it only
+    costs the consonants the transcriber reads. `soften` exists for the espeak fallback,
+    whose formant buzz does want taming.
+    """
     if len(x) == 0:
         return x
-    # a gentle 3-point smooth tames espeak's buzzy top without blurring consonants,
-    # which the transcriber needs to stay crisp
-    x = np.convolve(x, np.array([0.25, 0.5, 0.25], np.float32), "same")
+    if soften > 0:
+        k3 = np.array([soften * 0.5, 1.0 - soften, soften * 0.5], np.float32)
+        x = np.convolve(x, k3 / k3.sum(), "same")
     # high-pass by subtracting a slow moving average — removes rumble under ~90 Hz
     k = max(1, int(SR / 90))
     x = x - np.convolve(x, np.ones(k, np.float32) / k, "same")
     x = x / (np.max(np.abs(x)) + 1e-9) * 0.92
     wet = reverb(x, mix=room)
-    x = x + (wet - x) * 0.34                          # a watcher's distance, not a cathedral
+    x = x + (wet - x) * 0.26                          # a watcher's distance, not a cathedral
     return (x / (np.max(np.abs(x)) + 1e-9) * 0.9).astype(np.float32)
+
+
+def voiced(text, voice):
+    """One shaped line, with the right amount of taming for the engine in use."""
+    return shape(speak(text, voice), soften=0.5 if voice in ESPEAK else 0.0)
 
 
 def audio_of(path):
@@ -173,7 +239,7 @@ def process(path, line, voice, at, outdir):
         elif want < len(bed):
             bed = bed[:want]
 
-    nar = shape(speak(line, voice))
+    nar = voiced(line, voice)
     mixed = duck(bed, nar, at)
 
     with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as f:
@@ -193,13 +259,13 @@ def process(path, line, voice, at, outdir):
 
 
 def sample(outdir):
-    """One mp3 with the same sentence in every voice, announced, so a voice can be picked."""
+    """One mp3 with the same sentence in each neural voice, announced, so one can be picked."""
     parts = []
     gap = np.zeros(int(0.55 * SR), np.float32)
-    for name in VOICES:
-        parts.append(shape(speak(f"Voice: {name}.", "clear")) * 0.55)
+    for name in PIPER:
+        parts.append(voiced(f"Voice. {name}.", name) * 0.5)
         parts.append(gap)
-        parts.append(shape(speak(LINES["ch1_ep8"], name)))
+        parts.append(voiced(LINES["ch1_ep8"], name))
         parts.append(gap)
     mono = np.concatenate(parts)
     st = np.stack([mono, mono], 1)
@@ -215,7 +281,7 @@ def main():
     p.add_argument("--sample", action="store_true", help="render a voice-comparison mp3")
     p.add_argument("--episode", help="one episode id from episodes.json")
     p.add_argument("--all", action="store_true")
-    p.add_argument("--voice", default="observer", choices=list(VOICES))
+    p.add_argument("--voice", default="alan", choices=VOICES)
     p.add_argument("--at", type=float, default=1.0, help="seconds into the video")
     p.add_argument("--outdir", default=os.path.join(EX, "tts"))
     a = p.parse_args()
