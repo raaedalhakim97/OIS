@@ -27,12 +27,13 @@ from make_music import SR, midi, piano, pad, bass, softkick, reverb, master, add
 import title_card as tc
 import world, planet as pl, staff
 import flow as fl, eye
+import lighting as lg, foreground as fg
 from observian import say
 
 W, H = 1080, 1920
 FPS = 24
 TITLE_DUR = 6.0
-SDUR = 160.0
+SDUR = 166.0
 DUR = TITLE_DUR + SDUR
 fx = FX(W, H)
 GOLD = [255, 200, 130]; WARM = [255, 214, 165]; LAV = [206, 190, 244]
@@ -155,6 +156,7 @@ CAPS = [
     (127.0, 131.0, "and missed everything\nstanding on it."),
     (145.0, 149.0, "it can copy what you play."),
     (150.0, 154.0, "not what you are made of."),
+    (156.4, 159.4, "it cost him\nmost of his light."),
 ]
 
 # Alan. Baked in, because the Keeper answers the line at 34.
@@ -165,9 +167,9 @@ ALAN = [
     (49.0,  "He tried to copy my voice, and he couldn't. A voice is not one note."),
     (63.0,  "So he held the lowest sound he had, and listened above it."),
     (71.0,  "Twice the speed, an octave. Three times, a fifth. Four, five."),
-    (88.0,  "A major chord. He did not build it in episode six. He found it. "
-            "It was always in there."),
-    (105.0, "Then the dark copied the note. It took the pitch."),
+    # the picture lands this one. he only has to name it.
+    (88.5,  "He never built that chord. He found it."),
+    (105.0, "Then the dark copied the note."),
     (126.0, "And missed everything standing on top of it."),
     (144.0, "It can copy what you play. It cannot copy what you are made of."),
 ]
@@ -185,7 +187,8 @@ BLINKS = [(13.0, 0.24, 0.08, 0.38, 1.0),
           (97.0, 0.24, 0.08, 0.38, 1.0),
           (117.0, 0.14, 0.05, 0.20, 0.5),
           (135.0, 0.26, 0.09, 0.40, 1.0),
-          (155.5, 0.85, 0.30, 1.10, 1.0)]
+          (155.0, 0.30, 0.10, 0.44, 1.0),
+          (160.5, 0.85, 0.30, 1.10, 1.0)]
 
 
 # ── the camera ───────────────────────────────────────────────────────────────
@@ -223,7 +226,9 @@ CAM += [
     (132.0, 1.06, 0.44, 0.56),
     (CLOSE_T0 + 2.0, 1.20, 0.30, 0.60),                     # his answer
     (146.0, 1.12, 0.38, 0.54),                              # one last look at him
-    (150.0, 1.02, 0.44, 0.50), (SDUR, 1.00, 0.50, 0.48),
+    (150.0, 1.02, 0.44, 0.50),
+    (157.0, 1.16, 0.30, 0.60),                              # the cost, up close
+    (SDUR, 1.02, 0.44, 0.52),
 ]
 CAM.sort(key=lambda r: r[0])
 
@@ -365,9 +370,9 @@ def draw_chord_name(im, ts):
 
 
 def end_card(im, ts):
-    if ts < 156.0: return
+    if ts < 161.0: return
     d = ImageDraw.Draw(im, "RGBA")
-    fade = np.interp(ts, [156.0, 156.9, 158.4, 159.8], [0, 1, 1, 0])
+    fade = np.interp(ts, [161.0, 161.9, 163.4, 164.8], [0, 1, 1, 0])
     for (ln, yy) in [("the more you know,", 0.455), ("the more you observe.", 0.492)]:
         bb = d.textbbox((0, 0), ln, font=FSM); xx = (W - (bb[2] - bb[0])) // 2
         d.text((xx, int(yy * H)), ln, font=FSM, fill=(238, 232, 220, int(235 * fade)))
@@ -416,10 +421,23 @@ def story(ts):
                0.95 * hold,
                0.85 * smooth(CLOSE_T0, CLOSE_T0 + 1.6, ts))
     face = -1 if 34.6 <= ts < 56.0 else 1              # he turns toward the voice
+    # the light he is holding does not turn with him instantly — it swings a beat late
+    swing = 0.0
+    for tt in (34.6, 56.0):
+        swing += 26.0 * math.exp(-max(0.0, ts - tt) * 2.1) * math.sin((ts - tt) * 7.0) \
+                 * (1.0 if ts >= tt else 0.0)
     kspr, kfoot, kdx, kdy = character(146, "stand", ts, face,
                                       lift=clamp(lift), lean=fl.idle_sway(ts))
-    glow(a, KX + kdx, KY + kdy, 22 + 8 * heard * (1 - smooth(56, 58, ts)), GOLD,
-         0.85 + 0.15 * hold)
+    # he gives his own light to answer, and does not get it back. this is the price the
+    # chapter has been avoiding, and what Ep10 finally collects.
+    spend = smooth(153.0, 158.0, ts)
+    klit = (0.85 + 0.15 * hold) * (1.0 - 0.74 * spend)
+    LX, LY = KX + kdx + swing, KY + kdy - abs(swing) * 0.22
+    glow(a, LX, LY, (22 + 8 * heard * (1 - smooth(56, 58, ts))) * (1 - 0.45 * spend),
+         GOLD, klit)
+
+    # ---- every source that can light something else ----
+    lights = [(LX, LY, 430 * (1 - 0.4 * spend), GOLD, 0.90 * klit)]
 
     # ── the seven spent chords, at the open ─────────────────────────────────────
     spent = 1 - smooth(10.0, 13.0, ts)
@@ -452,6 +470,7 @@ def story(ts):
     if fund > 0.02:
         glow(a, STONE_X, STONE_Y, 15 + 6 * fund, GOLD, 0.85 * fund)
         glow(a, STONE_X, STONE_Y, 44, GOLD, 0.14 * fund)
+        lights.append((STONE_X, STONE_Y, 360, WARM, 0.75 * fund))
 
     coll = smooth(C_T0, C_T1, ts)
     seen = {}                                          # where each tone ended up, for its label
@@ -467,10 +486,18 @@ def story(ts):
         py += fl.bob(ts, 5.0 + 1.0 * k, f1=0.17 * k, f2=0.24 * k, ph=k * 0.9)
         if k in COLLAPSE and coll > 0.01:              # 3, 4 and 5 become Do Mi Sol
             tx, ty = SLOT[COLLAPSE[k]]
-            px = lerp(px, tx, coll); py = lerp(py, ty, coll)
-            if coll > 0.55:
+            # they do not travel in a straight line at the same speed: each leaves a
+            # beat after the last, arcs, and overshoots a little before it settles.
+            order = {4: 0, 5: 1, 3: 2}[k]
+            u = clamp((ts - (C_T0 + order * 0.42)) / (C_T1 - C_T0 - 0.9))
+            e = fl.back_out(u) if u > 0 else 0.0
+            ax, ay = lerp(px, tx, e), lerp(py, ty, e)
+            ay -= 96 * math.sin(math.pi * clamp(u)) * (1 - 0.4 * order)   # the arc
+            px, py = ax, ay
+            coll_k = e
+            if coll_k > 0.55:
                 glows[COLLAPSE[k]] = max(glows[COLLAPSE[k]],
-                                         0.75 * coll * max(alive, back))
+                                         0.75 * coll_k * max(alive, back))
         seen[k] = (px, py)
         if amt > 0.03:
             glow(a, px, py, 9 + 4 * amt, WARM, 0.75 * amt)
@@ -486,6 +513,7 @@ def story(ts):
     if COPY_T0 <= ts < CLOSE_T0:                       # its copy: bright pitch, nothing on it
         louder = smooth(LOUD_T0, LOUD_T0 + 12, ts)
         glow(a, STONE_X, STONE_Y, 13 + 20 * louder, COLD, 0.40 + 0.42 * louder)
+        lights.append((STONE_X, STONE_Y, 300 + 120 * louder, COLD, 0.55 + 0.35 * louder))
 
     # motes lifting off the ground — the world is never a still picture
     for i in range(9):
@@ -497,13 +525,20 @@ def story(ts):
         if al > 0.01:
             glow(a, mx, my, 5, WARM, al)
 
+    # the ground catches the light it is standing under, and the Keeper throws a shadow
+    lg.spill(a, mask, lights, amount=0.55)
+    lg.cast(a, KX, KY, lights, ground_y, length=2.0, amount=0.40)
+    fg.motes(a, ts, cam_at(ts), glow, WARM, n=5)
+
     vis = smooth(1.0, 4.5, ts)
     staff.glows_into(a, vis, glows, modes)
 
     im = Image.fromarray(a.clip(0, 255).astype(np.uint8))
+    kspr = lg.rim(kspr, KX, KY, lights, width=5, gain=1.05)
     im.paste(kspr, (int(KX - kspr.size[0] / 2), int(KY - kfoot)), kspr)
     if arrive > 0.02:
         sspr, sfoot, _, _ = character(178, "stand", ts, -1, lean=0.02 * math.sin(ts * 0.5))
+        sspr = lg.rim(sspr, sx, sy, lights, width=4, gain=0.55)   # it catches less
         al = sspr.getchannel("A").point(lambda v: int(v * clamp(arrive)))
         sspr = sspr.copy(); sspr.putalpha(al)
         im.paste(sspr, (int(sx - sspr.size[0] / 2), int(sy - sfoot)), sspr)
@@ -518,12 +553,15 @@ def story(ts):
         x0, y0, bw, bh = box
         im = im.resize((W, H), Image.LANCZOS,
                        box=(x0, y0, x0 + bw, y0 + bh))
+    if im.mode != "RGBA":
+        im = im.convert("RGBA")
+    fg.draw(im, ts, (z, ccx, ccy), strength=1.0)
     draw_partial_labels(im, ts, box, seen)
     draw_chord_name(im, ts)
     draw_caption(im, ts)
     end_card(im, ts)
 
-    frame = np.asarray(im, np.float32)
+    frame = np.asarray(im.convert("RGB"), np.float32)
     frame = fx.bloom(frame, sigma=8, thr=205, gain=0.68)
     frame = fx.vignette(frame, 0.42)
     frame = fx.grain(frame, ts * FPS, amt=0.013)
@@ -621,6 +659,11 @@ def build_audio():
     w(pad([midi(36), midi(48), midi(55), midi(60), midi(64)], 18, 0.052), CLOSE_T0, 0.5)
     w(bass(midi(36), 18, 0.055), CLOSE_T0, 0.5)
     say(d, "i am here", 152.0, style="confident", **K)
+    # and then he gives it away. the light goes out of the mix as it goes out of him.
+    say(d, "i give you this", 156.2, style="whisper", **K)
+    w(pad([midi(48), midi(55), midi(60)], 9.0, 0.030), 156.0, 0.5)
+    d(piano(midi(48), 7.0, 0.055), 158.6, 0.44)
+    w(bass(midi(29), 8.0, 0.034), 158.0, 0.5)
 
     dry = np.stack([reverb(dL, mix=0.45), reverb(dR, mix=0.45)], 1)
     wet = np.stack([reverb(wL, mix=1.0), reverb(wR, mix=1.0)], 1)
