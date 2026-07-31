@@ -291,11 +291,18 @@ def video_seconds(path):
     return None
 
 
-def lay(bed, items, amount=0.40, ramp=0.26, level=0.85):
+def lay(bed, items, amount=0.40, ramp=0.26, level=0.85, target_db=None, keep=0.10):
     """Lay spoken lines over the bed, pulling the music down only while a voice speaks.
 
     items = [(seconds, mono_signal), ...]. One envelope is built across every line, so
     back-to-back narration ducks once and stays down rather than pumping between lines.
+
+    With `target_db`, the duck is computed per line instead of fixed: each line measures
+    the bed underneath it and ducks only as far as it must to sit that many dB above it.
+    A fixed duck either buries the voice under the loud passages or flattens the music
+    under the quiet ones — this keeps the score where the score is already quiet, and
+    gets out of the way where it is not. Speech recognition needs roughly 12 dB, and so
+    does a listener on a phone in the street.
     """
     n = len(bed)
     env = np.ones(n, np.float32)
@@ -305,9 +312,16 @@ def lay(bed, items, amount=0.40, ramp=0.26, level=0.85):
     for at, sig in items:
         i = int(at * SR)
         j = min(n, i + len(sig))
-        if i < n and j > i:
-            spans.append((i, j))
-            env[i:j] = lo
+        if i >= n or j <= i:
+            continue
+        this = lo
+        if target_db is not None:
+            v = float(np.sqrt(np.mean((sig[:j - i] * level) ** 2)))
+            b = float(np.sqrt(np.mean(bed[i:j].mean(1) ** 2))) + 1e-9
+            need = v / (b * (10.0 ** (target_db / 20.0)))      # bed gain to hit the target
+            this = float(min(1.0, max(keep, need)))
+        spans.append((i, j))
+        env[i:j] = np.minimum(env[i:j], this)
     for i, j in spans:                                # ramp only where still open
         fi = max(0, i - r)
         env[fi:i] = np.minimum(env[fi:i], np.linspace(1.0, lo, i - fi, dtype=np.float32))

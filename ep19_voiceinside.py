@@ -607,7 +607,7 @@ def sine(freq, dur, amp, decay=1.0):
     return (np.sin(2 * np.pi * freq * t) * env * amp).astype(np.float32)
 
 
-def build_audio():
+def build_audio(bed_only=False):
     import narrate as N
     n = int(DUR * SR)
     dL = np.zeros(n, np.float32); dR = np.zeros(n, np.float32)
@@ -693,8 +693,14 @@ def build_audio():
 
     # Alan, laid over the finished bed with ducking — the Observer, in the room.
     # Shared with the picture, so the light answers the exact waveform you hear.
+    if bed_only:
+        return mix                                     # for measuring the voice against
     items = [(A + t, sig) for (t, sig) in alan_sigs()]
-    return N.lay(mix, items, amount=0.42)
+    # The bed is dense — pads and held sines — so a gentle duck left Alan sitting at or
+    # even below the music, and speech recognition found no speech to transcribe. It has
+    # to come down hard under him and he has to come up. Measured, not guessed: the
+    # target is roughly +12 dB of voice over bed.
+    return N.lay(mix, items, level=1.22, target_db=13.0, keep=0.14)
 
 
 def main():
