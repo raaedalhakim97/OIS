@@ -36,7 +36,7 @@ OUT = os.path.join(EX, "voice")
 
 # Episodes that carry their own narration in the episode module rather than getting it
 # from narrate.py. These expose ALAN and alan_sigs().
-BAKED = {"ch2_ep8": "ep19_voiceinside"}
+BAKED = {"ch2_ep8": "ep19_voiceinside", "ch2_ep9": "ep20_beatbetween"}
 
 
 def episode(eid):
