@@ -188,6 +188,120 @@ BLINKS = [(13.0, 0.24, 0.08, 0.38, 1.0),
           (155.5, 0.85, 0.30, 1.10, 1.0)]
 
 
+# ── the camera ───────────────────────────────────────────────────────────────
+# Short-form retention wants a visual change every 1.5-2s. This world is ambient and
+# fast cutting would wreck it, so the change comes from a moving camera instead: slow
+# pushes that reset attention without breaking the calm, and focus zooms that go and
+# look at whichever tone is sounding. Titles are drawn after the move, so text stays
+# crisp and still while the world drifts behind it.
+#
+# (t, zoom, centre x as fraction of W, centre y as fraction of H)
+CAM = [
+    (0.0,   1.02, 0.34, 0.62), (12.0,  1.14, 0.30, 0.60),
+    (14.5,  1.06, 0.46, 0.52),
+    (17.0,  1.13, 0.52, 0.50),                              # drift out toward the dark
+    (20.0,  1.10, 0.62, 0.55),                              # the echo comes back
+    (24.0,  1.04, 0.44, 0.54),
+    (33.0,  1.10, 0.30, 0.58), (36.5,  1.26, 0.29, 0.60),   # he hears the voice
+    (43.0,  1.16, 0.32, 0.58),
+    (48.0,  1.18, 0.52, 0.66), (55.0,  1.10, 0.58, 0.68),   # the thin note
+    (57.5,  1.30, 0.60, 0.70),                              # down onto the stone
+]
+# each partial gets its own look: the camera climbs the ladder with the sound
+for _i, _k in enumerate(PARTIALS):
+    _t = P_T0 + _i * P_STEP
+    _x, _y = partial_xy(_k)
+    CAM += [(_t + 0.5, 1.34, _x / W, _y / H), (_t + 3.6, 1.24, _x / W, (_y / H) - 0.02)]
+CAM += [
+    (C_T0 - 0.6, 1.30, 0.62, 0.58),
+    (C_T1 + 1.0, 1.00, 0.50, 0.42),                         # pull out to the whole staff
+    (96.0, 1.06, 0.50, 0.44),
+    (COPY_T0 + 1.5, 1.22, 0.50, 0.38),                      # in on the hollow rings
+    (112.0, 1.14, 0.56, 0.44),
+    (115.5, 1.06, 0.42, 0.40),                              # it does not understand
+    (LOUD_T0 + 2.0, 1.24, 0.70, 0.60),                      # its copy, getting louder
+    (132.0, 1.06, 0.44, 0.56),
+    (CLOSE_T0 + 2.0, 1.20, 0.30, 0.60),                     # his answer
+    (146.0, 1.12, 0.38, 0.54),                              # one last look at him
+    (150.0, 1.02, 0.44, 0.50), (SDUR, 1.00, 0.50, 0.48),
+]
+CAM.sort(key=lambda r: r[0])
+
+
+def cam_at(ts):
+    """Interpolated camera, plus a slow breath so the frame is never quite still."""
+    z = CAM[0][1]; cx = CAM[0][2]; cy = CAM[0][3]
+    for i in range(len(CAM) - 1):
+        t0, z0, x0, y0 = CAM[i]; t1, z1, x1, y1 = CAM[i + 1]
+        if t0 <= ts <= t1:
+            u = smooth(t0, t1, ts)
+            z = lerp(z0, z1, u); cx = lerp(x0, x1, u); cy = lerp(y0, y1, u)
+            break
+    else:
+        if ts > CAM[-1][0]:
+            z, cx, cy = CAM[-1][1], CAM[-1][2], CAM[-1][3]
+    z *= 1.0 + 0.006 * math.sin(ts * 0.31)                  # breath
+    cx += 0.004 * math.sin(ts * 0.23 + 1.1)
+    cy += 0.003 * math.sin(ts * 0.19)
+    return z, cx, cy
+
+
+def cam_box(z, cx, cy):
+    """The crop rectangle, kept inside the frame."""
+    bw, bh = W / z, H / z
+    x0 = min(max(cx * W - bw / 2, 0.0), W - bw)
+    y0 = min(max(cy * H - bh / 2, 0.0), H - bh)
+    return x0, y0, bw, bh
+
+
+def to_screen(x, y, box):
+    """Scene coordinates -> screen, so labels can be drawn after the move and stay sharp."""
+    x0, y0, bw, bh = box
+    return (x - x0) * (W / bw), (y - y0) * (H / bh)
+
+
+# ── Alan, driving the picture ────────────────────────────────────────────────
+# The narration is not a layer on top; it moves the world. His actual speech waveform
+# is turned into an envelope, and the light answers it syllable by syllable. When he
+# talks, the frame breathes with him — which is what makes the Keeper turning toward
+# him at 34 read as a reaction to something really there.
+_SIGS = None
+_ENV = None
+ENV_HZ = 100.0
+
+
+def alan_sigs():
+    """Alan's lines, synthesized once and shared by the picture and the mix."""
+    global _SIGS
+    if _SIGS is None:
+        import narrate as N
+        _SIGS = [(t, N.voiced(s, "alan")) for (t, s) in ALAN]
+    return _SIGS
+
+
+def alan_env(ts):
+    """How loudly Alan is speaking at story time ts, 0..1."""
+    global _ENV
+    if _ENV is None:
+        n = int(SDUR * ENV_HZ) + 4
+        e = np.zeros(n, np.float32)
+        step = int(SR / ENV_HZ)
+        for (t, sig) in alan_sigs():
+            mag = np.abs(sig)
+            k = len(mag) // step
+            if k < 1: continue
+            block = mag[:k * step].reshape(k, step).max(1)
+            i0 = int(t * ENV_HZ)
+            j = min(n, i0 + k)
+            e[i0:j] = np.maximum(e[i0:j], block[:j - i0])
+        # a short release so the light does not flicker between syllables
+        for i in range(1, n):
+            e[i] = max(e[i], e[i - 1] * 0.90)
+        _ENV = e / (e.max() + 1e-9)
+    i = int(clamp(ts, 0, SDUR - 0.02) * ENV_HZ)
+    return float(_ENV[min(i, len(_ENV) - 1)])
+
+
 def draw_caption(im, ts):
     d = ImageDraw.Draw(im, "RGBA")
     for (s, e, txt) in CAPS:
@@ -203,18 +317,40 @@ def draw_caption(im, ts):
                 yy += int((bb[3] - bb[1]) * 1.5)
 
 
-def draw_partial_labels(im, ts):
-    """Name each partial as it arrives, beside its light. This is the lesson, on screen."""
+def caption_on(ts):
+    """How strongly a caption is showing — labels must not fight it for the same band."""
+    v = 0.0
+    for (s, e, _t) in CAPS:
+        if s <= ts <= e:
+            v = max(v, float(np.interp(ts, [s, s + 0.5, e - 0.5, e], [0, 1, 1, 0])))
+    return v
+
+
+def draw_partial_labels(im, ts, box, seen):
+    """Name each partial as it arrives, beside its light — following the light through
+    the camera move, so the label stays attached to the tone it names."""
     if not (P_T0 - 1 <= ts <= C_T0 + 2): return
     d = ImageDraw.Draw(im, "RGBA")
     for k in PARTIALS:
         i = PARTIALS.index(k)
         t0 = P_T0 + i * P_STEP
         f = smooth(t0, t0 + 0.9, ts) * (1 - smooth(C_T0, C_T0 + 1.6, ts))
+        if f < 0.03 or k not in seen: continue
+        x, y = to_screen(seen[k][0], seen[k][1], box)
+        if not (-60 < x < W and -40 < y < H + 40): continue
+        # the caption owns the middle of the frame. A label in that band does not
+        # compete at reduced opacity — it gets out of the way completely.
+        near = 1.0 - clamp(abs(y - CENTER_Y * H) / 165.0)
+        con = caption_on(ts)
+        if near > 0.45 and con > 0.25: continue
+        f *= 1.0 - near * con
         if f < 0.03: continue
-        x, y = partial_xy(k)
-        d.text((x + 34, y - 4), P_LABEL[k], font=TINY,
-               fill=(226, 220, 208, int(215 * f)), anchor="lm")
+        tx = x + 34
+        if tx > W - 300: tx = x - 34                   # flip inboard near the edge
+        d.text((tx + 2, y - 2), P_LABEL[k], font=TINY, fill=(0, 0, 0, int(150 * f)),
+               anchor="lm" if tx > x else "rm")
+        d.text((tx, y - 4), P_LABEL[k], font=TINY, fill=(226, 220, 208, int(220 * f)),
+               anchor="lm" if tx > x else "rm")
 
 
 def draw_chord_name(im, ts):
@@ -254,15 +390,16 @@ def story(ts):
     # ── the voice: it has no position, so it cannot be drawn as a point ──────────
     # Every other light in this world comes from somewhere. This one lifts the whole
     # frame and closes in from the edges — the Observer, who is not standing anywhere.
-    voice = 0.0
-    for (t, s) in ALAN:
-        voice = max(voice, smooth(t - 0.4, t + 0.5, ts) * (1 - smooth(t + 2.4, t + 4.2, ts)))
+    voice = alan_env(ts)                               # his real waveform, not a guess
     heard = smooth(34.0, 35.4, ts)                     # the one he actually notices
     if voice > 0.02:
-        a *= (1.0 + 0.05 * voice)
+        a *= (1.0 + 0.055 * voice)
         for i in range(5):
-            r = (0.30 + i * 0.13) * W
-            ring(a, CX, 0.42 * H, r, WHITE, 0.020 * voice * (1 - i * 0.14), width=26)
+            # the rings breathe outward on every syllable he speaks
+            r = (0.28 + i * 0.13) * W + 26 * voice
+            ring(a, CX, 0.42 * H, r, WHITE, 0.022 * voice * (1 - i * 0.14), width=26)
+        if heard > 0.05:                               # once he can hear it, it has weight
+            glow(a, CX, 0.42 * H, 260, WHITE, 0.012 * voice * heard)
 
     # ── the Silence ─────────────────────────────────────────────────────────────
     arrive = smooth(COPY_T0 - 8, COPY_T0, ts)
@@ -317,6 +454,7 @@ def story(ts):
         glow(a, STONE_X, STONE_Y, 44, GOLD, 0.14 * fund)
 
     coll = smooth(C_T0, C_T1, ts)
+    seen = {}                                          # where each tone ended up, for its label
     # the chord dies as the Silence takes the pitch, and he brings it back at the close
     alive = 1 - smooth(COPY_T0 - 1.2, COPY_T0 + 0.8, ts)
     back = smooth(CLOSE_T0 + 0.5, CLOSE_T0 + 3.0, ts)
@@ -324,12 +462,16 @@ def story(ts):
         amt = partial_amt(k, ts) * alive
         amt = max(amt, back)
         px, py = partial_xy(k)
+        # a sounding tone is never still: higher partials ride faster, as they do in air
+        px += fl.bob(ts, 7.0 + 1.4 * k, f1=0.13 * k, f2=0.31 * k, ph=k * 1.7)
+        py += fl.bob(ts, 5.0 + 1.0 * k, f1=0.17 * k, f2=0.24 * k, ph=k * 0.9)
         if k in COLLAPSE and coll > 0.01:              # 3, 4 and 5 become Do Mi Sol
             tx, ty = SLOT[COLLAPSE[k]]
             px = lerp(px, tx, coll); py = lerp(py, ty, coll)
             if coll > 0.55:
                 glows[COLLAPSE[k]] = max(glows[COLLAPSE[k]],
                                          0.75 * coll * max(alive, back))
+        seen[k] = (px, py)
         if amt > 0.03:
             glow(a, px, py, 9 + 4 * amt, WARM, 0.75 * amt)
             glow(a, px, py, 26, WARM, 0.13 * amt)
@@ -345,6 +487,16 @@ def story(ts):
         louder = smooth(LOUD_T0, LOUD_T0 + 12, ts)
         glow(a, STONE_X, STONE_Y, 13 + 20 * louder, COLD, 0.40 + 0.42 * louder)
 
+    # motes lifting off the ground — the world is never a still picture
+    for i in range(9):
+        ph = i * 0.7
+        u = ((ts * 0.055 + i * 0.111) % 1.0)
+        mx = (0.16 + 0.085 * i) * W + 40 * math.sin(ts * 0.21 + ph)
+        my = ground_y(mx) - u * 0.30 * H
+        al = 0.30 * math.sin(math.pi * u) * (0.5 + 0.5 * math.sin(ts * 0.7 + ph))
+        if al > 0.01:
+            glow(a, mx, my, 5, WARM, al)
+
     vis = smooth(1.0, 4.5, ts)
     staff.glows_into(a, vis, glows, modes)
 
@@ -356,7 +508,17 @@ def story(ts):
         sspr = sspr.copy(); sspr.putalpha(al)
         im.paste(sspr, (int(sx - sspr.size[0] / 2), int(sy - sfoot)), sspr)
     staff.draw(im, vis, modes, glows)
-    draw_partial_labels(im, ts)
+
+    # ── move the camera, then lay the words on top ──────────────────────────────
+    # Text is drawn after the crop so it stays sharp and stationary while the world
+    # drifts behind it — the way titles sit above a moving shot in a real edit.
+    z, ccx, ccy = cam_at(ts)
+    box = cam_box(z, ccx, ccy)
+    if z > 1.001:
+        x0, y0, bw, bh = box
+        im = im.resize((W, H), Image.LANCZOS,
+                       box=(x0, y0, x0 + bw, y0 + bh))
+    draw_partial_labels(im, ts, box, seen)
     draw_chord_name(im, ts)
     draw_caption(im, ts)
     end_card(im, ts)
@@ -466,8 +628,9 @@ def build_audio():
     fi, fo = int(0.6 * SR), int(4 * SR)
     mix[:fi] *= np.linspace(0, 1, fi)[:, None]; mix[-fo:] *= np.linspace(1, 0, fo)[:, None]
 
-    # Alan, laid over the finished bed with ducking — the Observer, in the room
-    items = [(A + t, N.voiced(s, "alan")) for (t, s) in ALAN]
+    # Alan, laid over the finished bed with ducking — the Observer, in the room.
+    # Shared with the picture, so the light answers the exact waveform you hear.
+    items = [(A + t, sig) for (t, sig) in alan_sigs()]
     return N.lay(mix, items, amount=0.42)
 
 
