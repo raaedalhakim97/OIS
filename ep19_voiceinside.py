@@ -28,6 +28,7 @@ import title_card as tc
 import world, planet as pl, staff
 import flow as fl, eye
 import lighting as lg, foreground as fg
+import subs
 from observian import say
 
 W, H = 1080, 1920
@@ -142,7 +143,7 @@ CLOSE_T0 = 136.0
 
 SEVEN = [[0, 2, 4], [1, 3, 5], [2, 4, 6], [3, 5, 7], [4, 6, 1], [5, 7, 2], [6, 1, 3]]
 
-CAPS = [
+STORY_CAPS = [
     (1.2, 5.4, "he had seven chords."),
     (6.2, 9.6, "the dark had learned\nall seven."),
     (21.0, 24.4, "so he stopped playing."),
@@ -158,6 +159,25 @@ CAPS = [
     (150.0, 154.0, "not what you are made of."),
     (156.4, 159.4, "it cost him\nmost of his light."),
 ]
+
+# Only the beats with no narration survive as written captions. Everything Alan says is
+# now on screen word for word, timed against his own waveform — the screen and the voice
+# must not tell the audience two different things.
+# "he could not" and "something spoke that was not a note" were dropped: Alan says both
+# beats himself now, and a caption repeating him in different words is the exact problem
+# this replaces. Only the moment he never narrates stays written.
+STORY_ONLY = {"it cost him\nmost of his light."}
+
+_CAPS = None
+
+
+def CAPS_():
+    """Captions: Alan's exact words, plus the few silent beats."""
+    global _CAPS
+    if _CAPS is None:
+        extra = [c for c in STORY_CAPS if c[2] in STORY_ONLY]
+        _CAPS = subs.build(ALAN, alan_sigs(), SR, extra=extra)
+    return _CAPS
 
 # Alan. Baked in, because the Keeper answers the line at 34.
 ALAN = [
@@ -309,7 +329,7 @@ def alan_env(ts):
 
 def draw_caption(im, ts):
     d = ImageDraw.Draw(im, "RGBA")
-    for (s, e, txt) in CAPS:
+    for (s, e, txt) in CAPS_():
         if s <= ts <= e:
             fade = np.interp(ts, [s, s + 0.5, e - 0.5, e], [0, 1, 1, 0])
             lines = txt.split("\n")
@@ -325,7 +345,7 @@ def draw_caption(im, ts):
 def caption_on(ts):
     """How strongly a caption is showing — labels must not fight it for the same band."""
     v = 0.0
-    for (s, e, _t) in CAPS:
+    for (s, e, _t) in CAPS_():
         if s <= ts <= e:
             v = max(v, float(np.interp(ts, [s, s + 0.5, e - 0.5, e], [0, 1, 1, 0])))
     return v
