@@ -1,7 +1,7 @@
 # CHAPTER II · EPISODE 10 — "The Loudest Quiet"
 ### the end of Chapter II, and the first step of Chapter III
 
-**Runtime** ~3:10 · **Land** the Long Dark → the mountain
+**Runtime** ~3:30 · **Land** the Long Dark → the mountain
 **Teaches** the rest — silence is not the end of music, it is written into it
 **Closes** the Silence, the Elder, the whole question of what a keeper is
 **Opens** Chapter III: he has given everything away, so now he must learn to *make*
@@ -50,9 +50,12 @@ never once *made* something of his own. So he goes up.
 | 14 | 200–214 | At the top: an **Eagle** circling high, and a **Serpent** coiled low. The proudest note and the deepest one. They have been waiting. | a high circling note; a low coiling drone |
 | 15 | 214–228 | And the Keeper speaks — properly, for the first time. Not a caption. Not Alan. **Him.** | his voice, in Observian, longer than he has ever spoken |
 | 16 | 228–242 | *I have carried what I was given. I have given it away. I have never made anything of my own.* | the question, unresolved |
-| 17 | 242–256 | Then the sun comes up on the mountain — and the sunrise is **C, G, C**: the overtone series. The same physics he learned in Episode 8, now a fanfare. | the sunrise: low C, its fifth, its octave, rising |
-| 18 | 256–270 | Card: *CHAPTER III — THUS SANG THE KEEPER.* And he begins to go down. | the fanfare resolving into a walking pulse |
-| 19 | 270–280 | *the more you know, the more you observe.* | one note, waiting |
+| 17 | 242–256 | Then the sun comes up — and he asks **it** the question the whole chapter asked: *you give and give. Who gives to you?* | the sunrise begins: a low C, alone |
+| 18 | 256–272 | **The sun does not answer, because the sun is the answer.** It gives because that is what it is made of — and its light is the overtone series: one note holding its fifth and its octave inside it, the way every note does. | C, then its fifth, then its octave — the fanfare assembling out of one tone |
+| 19 | 272–286 | And he understands: *what would your giving be, if there were no one to give to?* Empty hands are not a wound. Empty hands are what a sun looks like from the inside. | the fanfare, full and warm |
+| 20 | 286–300 | So he goes down. Not defeated — **the way the sun goes down**, which is the only way it ever reaches anybody. | the fanfare resolving into a walking pulse |
+| 21 | 300–312 | Card: *CHAPTER III — THUS SANG THE KEEPER.* | the pulse, continuing |
+| 22 | 312–322 | *the more you know, the more you observe.* | one note, waiting |
 
 ---
 
@@ -72,8 +75,11 @@ never once *made* something of his own. So he goes up.
 | 174.0 | Below him, the world sang without him. |
 | 188.0 | So he went up. He had carried other people's notes for two chapters, and never written one of his own. |
 | 216.0 | At the top there was an eagle, circling. And a serpent, coiled. They had been waiting a long time. |
-| 244.0 | And the sun came up. Low, then its fifth, then its octave — the same three notes that live inside every sound. |
-| 258.0 | Thus began the third chapter. And the Keeper went down. |
+| 244.0 | And the sun came up. So he asked it the question nobody had answered all chapter. You give, and you give. Who gives to you? |
+| 258.0 | It did not answer. It rose — low, then its fifth, then its octave. The same three notes that live inside every sound. |
+| 274.0 | The sun does not give because someone gave to it. It gives because that is what it is made of. And what would all that giving be, if there were nobody down there to shine on? |
+| 288.0 | So he went down. Not beaten. The way the sun goes down — which is the only way it has ever reached anyone. |
+| 302.0 | Thus began the third chapter. |
 
 ## Observian
 
@@ -89,7 +95,11 @@ never once *made* something of his own. So he goes up.
 | 168.0 | *farewell* | Sol Re Ti | the Silence, leaving |
 | 218.0 | *i am here* | Do Sol | the Eagle and the Serpent, together |
 | 230.0 | *i am searching* | Do Fa Re | the Keeper — self, doubt, moving anyway |
-| 262.0 | *the song has begun* | Do Re Mi Sol | the sunrise |
+| 246.0 | *how are you* | Fa Mi Sol | the Keeper, to the sun — literally *what is your harmony?* |
+| 262.0 | *i am well* | Do Sol Do | the sun: *my harmony is complete* — origin, harmony, origin |
+| 278.0 | *i give you this* | Do Mi Sol Ti | the sun, and then the Keeper, the same phrase |
+| 292.0 | *let us go* | Re Sol | the Eagle and the Serpent, following him down |
+| 306.0 | *the song has begun* | Do Re Mi Sol | the chapter |
 
 ## Captions Alan does not speak
 
@@ -98,7 +108,10 @@ never once *made* something of his own. So he goes up.
 (80.0, 84.0)   "so they gave it none."
 (156.0, 160.0) "all but one."
 (200.0, 204.0) "he climbed the staff."
-(266.0, 271.0) "CHAPTER III\nTHUS SANG THE KEEPER"
+(248.0, 252.0) "you give, and you give."
+(253.0, 257.0) "who gives to you?"
+(280.0, 285.0) "it gives because\nthat is what it is made of."
+(304.0, 310.0) "CHAPTER III\nTHUS SANG THE KEEPER"
 ```
 
 ---
@@ -125,6 +138,39 @@ audience will feel the reference without being told, and it will be *earned*, be
 they watched us find those exact partials two episodes ago.
 
 ---
+
+## The sun, and why it settles the chapter
+
+Chapter II has been asking one question in every episode: **who gives to the giver?** The
+Elder gave and went dark. The Keeper gave his light and it was not enough. In Ep8 he gave
+the note that answered the dark and it cost him nearly everything. Nobody ever gives back.
+
+The Keeper finally asks it out loud, on the mountain, to the only thing in the world that
+has been giving without pause since the prologue: **the sun.**
+
+*You give, and you give. Who gives to you?*
+
+And the sun does not answer, because **the sun is the answer.** It does not shine because
+somebody supplied it. It shines because that is what it is made of — and the proof is in
+its light, which is one note holding its fifth and its octave inside itself, exactly the
+way every note in Ep8 turned out to. It gives from its own contents. It always did.
+
+Then the inversion that turns the whole chapter over:
+
+> **What would all that giving be, if there were nobody down there to shine on?**
+
+The giver is not owed. The giver *needs the receivers* — without them the giving is
+nothing, a light with no world under it. So empty hands were never a wound. Empty hands
+are what a sun looks like from the inside.
+
+And that is why he goes **down**. Not defeated, not exiled: the way the sun goes down,
+which is the only way it has ever reached anybody. Nietzsche's word for the descent is
+the same word as a sunset, and the episode should land that without ever saying so.
+
+**Musically it is one gesture.** He asks the sun *how are you* — which in Observian is
+literally *what is your harmony?* (Fa Mi Sol). The sun replies *i am well* — *my harmony
+is complete* (Do Sol Do): origin, harmony, origin. Then both of them, one after the other,
+play the same phrase: *i give you this.*
 
 ## Why this is the right ending and the right beginning
 

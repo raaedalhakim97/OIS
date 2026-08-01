@@ -65,6 +65,24 @@ and **eternal recurrence** made audible: every song comes back to where it start
 **The pair is the point:** the Eagle is the melody, the Serpent is the bass. Neither is
 music alone. Chapter III is the Keeper learning to be the thing between them — harmony.
 
+### The Sun — *the one that never stopped giving*
+Not a character who speaks, and the more important for it. It has been in the sky since
+the prologue, giving light to a world that never once thanked it, and in Ep10 it answers
+Chapter II's question by simply being what it is.
+
+- **Its light is the overtone series**: one note carrying its fifth and its octave. It
+  gives out of its own contents, which is the only kind of giving there is.
+- **Its law:** a giver is not owed. A giver *needs receivers* — take away the world below
+  and all that shining is nothing.
+- **Its motion is the chapter's motion.** The sun's whole day is a going-down, and going
+  down is how it reaches anyone. Every descent in Chapter III rhymes with it: the Keeper
+  coming off the mountain, the Rope Dancer falling, the Last Man's easy resolutions
+  sinking to the tonic.
+- **Use it as the light source, literally.** With `lighting.py` the sun should be a real
+  source in every daylight scene — rim on the characters, spill on the ground, shadows
+  pointing away. The chapter's thesis should be doing work in the render, not just the
+  script.
+
 ### The Rope Dancer — *the one who crosses*
 Walks a wire strung between two keys. Chromatic, brave, unsupported by any scale. In the
 opening episode of the chapter he **falls**, and the Keeper stays with him while he goes
@@ -143,6 +161,9 @@ Tuesday's topic.
 
 - **The sunrise motif** — C, G, C from the overtone series, established in Ep8 and used
   as the chapter's opening fanfare. It is the chapter's signature; bring it back at Ep10.
+- **The sun's phrase is *i am well*** (Do Sol Do — origin, harmony, origin). Whenever the
+  chapter needs to say *this is what wholeness sounds like*, that is the shape: leave from
+  the root, find the harmony, come home unchanged.
 - **The Serpent is a permanent drone.** Chapter III has a bottom to it that Chapter II
   did not.
 - **The Eagle's line never resolves** until Ep10, when it finally comes down to the tonic
